@@ -1,0 +1,1732 @@
+.wcx-hover {
+    outline: 3px solid #ff4d00 !important;
+    outline-offset: 2px !important;
+    cursor: crosshair !important;
+}
+
+
+#wcx-element-label {
+
+    position: absolute;
+
+    z-index: 2147483647;
+
+    background: #111;
+
+    color: #fff;
+
+    padding: 5px 8px;
+
+    font-family: Arial, sans-serif;
+
+    font-size: 12px;
+
+    line-height: 1;
+
+    border-radius: 4px;
+
+    pointer-events: none;
+
+    white-space: nowrap;
+}
+
+
+#wcx-result {
+
+    position: fixed;
+
+    top: 20px;
+
+    right: 20px;
+
+    width: 420px;
+
+    max-height: 80vh;
+
+    z-index: 2147483647;
+
+    background: #fff;
+
+    color: #111;
+
+    border: 1px solid #ddd;
+
+    border-radius: 10px;
+
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+
+    overflow: hidden;
+
+    font-family: Arial, sans-serif;
+}
+
+
+.wcx-result-header {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    padding: 14px 16px;
+
+    background: #111;
+
+    color: #fff;
+}
+
+
+#wcx-close-result {
+
+    border: none;
+
+    background: transparent;
+
+    color: #fff;
+
+    font-size: 22px;
+
+    cursor: pointer;
+}
+
+
+.wcx-result-body {
+
+    padding: 16px;
+
+    font-size: 13px;
+
+    overflow-y: auto;
+
+    max-height: calc(80vh - 60px);
+}
+
+
+.wcx-result-body > div {
+
+    margin-bottom: 12px;
+}
+
+
+.wcx-result-body code {
+
+    display: block;
+
+    margin-top: 5px;
+
+    padding: 8px;
+
+    background: #f4f4f4;
+
+    border-radius: 5px;
+
+    word-break: break-word;
+}
+
+
+.wcx-html-preview textarea {
+
+    width: 100%;
+
+    height: 250px;
+
+    margin-top: 7px;
+
+    box-sizing: border-box;
+
+    font-family: Consolas, monospace;
+
+    font-size: 11px;
+
+    padding: 10px;
+
+    resize: vertical;
+}
+
+
+.wcx-popup {
+
+    width: 280px;
+
+    font-family: Arial, sans-serif;
+}
+
+
+.wcx-header {
+
+    padding: 16px;
+
+    background: #111;
+
+    color: #fff;
+}
+
+
+.wcx-logo {
+
+    font-size: 22px;
+
+    font-weight: bold;
+}
+
+
+.wcx-title {
+
+    margin-top: 4px;
+
+    font-size: 12px;
+
+    opacity: 0.7;
+}
+
+
+.wcx-body {
+
+    padding: 16px;
+}
+
+
+#selectComponent {
+
+    width: 100%;
+
+    padding: 12px;
+
+    border: none;
+
+    border-radius: 6px;
+
+    background: #111;
+
+    color: #fff;
+
+    cursor: pointer;
+
+    font-size: 14px;
+}
+
+
+#selectComponent:hover {
+
+    opacity: 0.9;
+}
+
+
+#status {
+
+    margin-top: 12px;
+
+    font-size: 12px;
+
+    color: #666;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+.wcx-component-hover {
+
+    outline: 3px solid #ff4d00 !important;
+
+    outline-offset: 2px !important;
+
+    cursor: crosshair !important;
+}
+
+
+/* =========================================
+   ELEMENT LABEL
+========================================= */
+
+#wcx-element-label {
+
+    position: absolute;
+
+    z-index: 2147483647;
+
+    background: #111;
+
+    color: #fff;
+
+    padding: 6px 9px;
+
+    border-radius: 4px;
+
+    font-family:
+        Arial,
+        sans-serif;
+
+    font-size: 12px;
+
+    line-height: 1.2;
+
+    pointer-events: none;
+
+    white-space: nowrap;
+
+    box-shadow:
+        0 2px 8px rgba(
+            0,
+            0,
+            0,
+            0.25
+        );
+
+}
+
+
+/* =========================================
+   DOM INSPECTOR
+========================================= */
+
+#wcx-inspector {
+
+    position: fixed;
+
+    top: 20px;
+
+    right: 20px;
+
+    width: 390px;
+
+    max-width: calc(
+        100vw - 40px
+    );
+
+    max-height: 85vh;
+
+    z-index: 2147483646;
+
+    background: #fff;
+
+    color: #111;
+
+    border-radius: 10px;
+
+    border: 1px solid #ddd;
+
+    box-shadow:
+        0 12px 45px rgba(
+            0,
+            0,
+            0,
+            0.28
+        );
+
+    overflow: hidden;
+
+    font-family:
+        Arial,
+        sans-serif;
+
+    font-size: 13px;
+
+}
+
+
+/* =========================================
+   HEADER
+========================================= */
+
+.wcx-inspector-header {
+
+    display: flex;
+
+    justify-content:
+        space-between;
+
+    align-items:
+        center;
+
+    gap: 15px;
+
+    padding: 14px 16px;
+
+    background: #111;
+
+    color: #fff;
+
+}
+
+
+.wcx-inspector-subtitle {
+
+    margin-top: 4px;
+
+    font-size: 11px;
+
+    opacity: 0.65;
+
+}
+
+
+#wcx-inspector-close {
+
+    width: 30px;
+
+    height: 30px;
+
+    border: none;
+
+    background: transparent;
+
+    color: #fff;
+
+    font-size: 22px;
+
+    cursor: pointer;
+
+}
+
+
+/* =========================================
+   CURRENT NODE
+========================================= */
+
+.wcx-current-node {
+
+    padding: 14px 16px;
+
+    background: #f5f5f5;
+
+    border-bottom:
+        1px solid #e5e5e5;
+
+}
+
+
+.wcx-section-title {
+
+    margin-bottom: 7px;
+
+    font-size: 10px;
+
+    font-weight: bold;
+
+    letter-spacing: 0.7px;
+
+    color: #777;
+
+}
+
+
+.wcx-current-node-name {
+
+    padding: 9px 10px;
+
+    background: #fff;
+
+    border:
+        1px solid #ddd;
+
+    border-radius: 5px;
+
+    font-family:
+        Consolas,
+        monospace;
+
+    font-size: 12px;
+
+    word-break: break-word;
+
+}
+
+
+/* =========================================
+   DOM PATH
+========================================= */
+
+.wcx-dom-path {
+
+    padding: 10px 16px;
+
+    max-height: 260px;
+
+    overflow-y: auto;
+
+}
+
+
+.wcx-dom-node {
+
+    width: 100%;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+    padding: 8px 10px;
+
+    border:
+        1px solid #e1e1e1;
+
+    background: #fff;
+
+    border-radius: 5px;
+
+    text-align: left;
+
+    cursor: pointer;
+
+    font-family:
+        Consolas,
+        monospace;
+
+    font-size: 11px;
+
+}
+
+
+.wcx-dom-node:hover {
+
+    background: #f5f5f5;
+
+}
+
+
+.wcx-dom-node-active {
+
+    background: #fff3ed !important;
+
+    border-color:
+        #ff4d00 !important;
+
+}
+
+
+.wcx-node-level {
+
+    min-width: 20px;
+
+    font-family:
+        Arial,
+        sans-serif;
+
+    font-size: 10px;
+
+    color: #999;
+
+}
+
+
+.wcx-dom-arrow {
+
+    height: 12px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    color: #aaa;
+
+    font-size: 11px;
+
+}
+
+
+/* =========================================
+   CHILDREN
+========================================= */
+
+.wcx-children {
+
+    padding:
+        0 16px 12px;
+
+    max-height: 150px;
+
+    overflow-y: auto;
+
+}
+
+
+.wcx-child-node {
+
+    width: 100%;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 7px;
+
+    padding: 7px 9px;
+
+    margin-bottom: 5px;
+
+    border:
+        1px solid #e5e5e5;
+
+    background: #fff;
+
+    border-radius: 5px;
+
+    text-align: left;
+
+    cursor: pointer;
+
+    font-family:
+        Consolas,
+        monospace;
+
+    font-size: 11px;
+
+}
+
+
+.wcx-child-node:hover {
+
+    background: #f5f5f5;
+
+}
+
+
+.wcx-no-children {
+
+    padding: 8px;
+
+    color: #999;
+
+    font-size: 11px;
+
+}
+
+
+/* =========================================
+   ACTIONS
+========================================= */
+
+.wcx-inspector-actions {
+
+    display: flex;
+
+    gap: 8px;
+
+    padding: 12px 16px;
+
+    border-top:
+        1px solid #e5e5e5;
+
+    background: #fafafa;
+
+}
+
+
+.wcx-inspector-actions button {
+
+    min-height: 38px;
+
+    padding:
+        0 12px;
+
+    border:
+        1px solid #ccc;
+
+    background: #fff;
+
+    color: #111;
+
+    border-radius: 5px;
+
+    cursor: pointer;
+
+    font-size: 12px;
+
+}
+
+
+.wcx-inspector-actions button:hover {
+
+    background: #f2f2f2;
+
+}
+
+
+.wcx-inspector-actions button:disabled {
+
+    opacity: 0.4;
+
+    cursor: not-allowed;
+
+}
+
+
+.wcx-primary-btn {
+
+    flex: 1;
+
+    border-color:
+        #111 !important;
+
+    background:
+        #111 !important;
+
+    color:
+        #fff !important;
+
+}
+
+
+.wcx-primary-btn:hover {
+
+    background:
+        #222 !important;
+
+}
+
+
+/* =========================================
+   RESULT PANEL
+========================================= */
+
+#wcx-result {
+
+    position: fixed;
+
+    top: 20px;
+
+    right: 20px;
+
+    width: 420px;
+
+    max-width: calc(
+        100vw - 40px
+    );
+
+    max-height: 80vh;
+
+    z-index: 2147483647;
+
+    background: #fff;
+
+    color: #111;
+
+    border:
+        1px solid #ddd;
+
+    border-radius: 10px;
+
+    box-shadow:
+        0 12px 45px rgba(
+            0,
+            0,
+            0,
+            0.28
+        );
+
+    overflow: hidden;
+
+    font-family:
+        Arial,
+        sans-serif;
+
+}
+
+
+.wcx-result-header {
+
+    display: flex;
+
+    justify-content:
+        space-between;
+
+    align-items:
+        center;
+
+    padding:
+        14px 16px;
+
+    background:
+        #111;
+
+    color:
+        #fff;
+
+}
+
+
+#wcx-close-result {
+
+    border: none;
+
+    background:
+        transparent;
+
+    color:
+        #fff;
+
+    font-size:
+        22px;
+
+    cursor:
+        pointer;
+
+}
+
+
+.wcx-result-body {
+
+    padding:
+        16px;
+
+    max-height:
+        calc(80vh - 60px);
+
+    overflow-y:
+        auto;
+
+    font-size:
+        12px;
+
+}
+
+
+.wcx-result-body > div {
+
+    margin-bottom:
+        12px;
+
+}
+
+
+.wcx-result-body code {
+
+    display:
+        block;
+
+    margin-top:
+        5px;
+
+    padding:
+        8px;
+
+    background:
+        #f4f4f4;
+
+    border-radius:
+        5px;
+
+    word-break:
+        break-word;
+
+}
+
+
+.wcx-html-preview textarea {
+
+    width:
+        100%;
+
+    height:
+        300px;
+
+    box-sizing:
+        border-box;
+
+    margin-top:
+        7px;
+
+    padding:
+        10px;
+
+    resize:
+        vertical;
+
+    font-family:
+        Consolas,
+        monospace;
+
+    font-size:
+        11px;
+
+    line-height:
+        1.5;
+
+}
+
+
+/*Step 7 — CSS result styling*/
+
+#wcx-css-result {
+
+    position: fixed;
+
+    top: 20px;
+
+    right: 20px;
+
+    width: 520px;
+
+    max-width:
+        calc(100vw - 40px);
+
+    max-height: 85vh;
+
+    z-index: 2147483647;
+
+    background: #fff;
+
+    color: #111;
+
+    border:
+        1px solid #ddd;
+
+    border-radius: 10px;
+
+    box-shadow:
+        0 12px 45px rgba(
+            0,
+            0,
+            0,
+            0.28
+        );
+
+    overflow: hidden;
+
+    font-family:
+        Arial,
+        sans-serif;
+
+}
+
+
+.wcx-css-summary {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(3, 1fr);
+
+    gap: 8px;
+
+    padding: 12px 16px;
+
+    border-bottom:
+        1px solid #e5e5e5;
+
+    background:
+        #f7f7f7;
+
+    font-size: 11px;
+
+}
+
+
+.wcx-css-rules {
+
+    max-height:
+        calc(85vh - 110px);
+
+    overflow-y:
+        auto;
+
+    padding:
+        10px 16px;
+
+}
+
+
+.wcx-css-rule {
+
+    display: flex;
+
+    gap: 10px;
+
+    padding:
+        10px 0;
+
+    border-bottom:
+        1px solid #eee;
+
+}
+
+
+.wcx-css-rule-number {
+
+    min-width: 24px;
+
+    color: #999;
+
+    font-size: 10px;
+
+}
+
+
+.wcx-css-rule-content {
+
+    min-width: 0;
+
+    flex: 1;
+
+}
+
+
+.wcx-css-selector {
+
+    margin-bottom: 5px;
+
+    color: #b23a00;
+
+    font-family:
+        Consolas,
+        monospace;
+
+    font-size: 12px;
+
+    word-break:
+        break-word;
+
+}
+
+
+.wcx-css-rule pre {
+
+    margin: 0;
+
+    padding: 9px;
+
+    background:
+        #f5f5f5;
+
+    border-radius: 5px;
+
+    white-space:
+        pre-wrap;
+
+    word-break:
+        break-word;
+
+    font-family:
+        Consolas,
+        monospace;
+
+    font-size: 10px;
+
+    line-height: 1.45;
+
+}
+
+
+.wcx-css-media {
+
+    margin-top: 6px;
+
+    color: #666;
+
+    font-family:
+        Consolas,
+        monospace;
+
+    font-size: 10px;
+
+}
+
+
+
+
+/* =========================================
+   WCX CSS ANALYSIS V2
+========================================= */
+
+#wcx-css-result {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 650px;
+    max-width: calc(100vw - 40px);
+    max-height: calc(100vh - 40px);
+
+    background: #ffffff;
+    color: #222222;
+
+    border: 1px solid #cccccc;
+    border-radius: 6px;
+
+    box-shadow:
+        0 10px 30px rgba(0, 0, 0, 0.20);
+
+    z-index: 2147483647;
+
+    overflow: hidden;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    font-size: 13px;
+}
+
+
+/* =========================================
+   HEADER
+========================================= */
+
+#wcx-css-result .wcx-result-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 12px 14px;
+
+    background: #f5f5f5;
+
+    border-bottom:
+        1px solid #dddddd;
+}
+
+
+#wcx-css-result
+.wcx-result-header strong {
+    font-size: 14px;
+}
+
+
+#wcx-css-result
+#wcx-close-css-result {
+    border: 0;
+    background: transparent;
+
+    font-size: 22px;
+
+    cursor: pointer;
+
+    line-height: 1;
+}
+
+
+/* =========================================
+   SUMMARY
+========================================= */
+
+#wcx-css-result .wcx-css-summary {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+
+    gap: 8px;
+
+    padding: 12px;
+
+    border-bottom:
+        1px solid #dddddd;
+
+    background: #ffffff;
+}
+
+
+#wcx-css-result .wcx-css-summary > div {
+
+    padding: 8px;
+
+    border:
+        1px solid #e2e2e2;
+
+    border-radius: 4px;
+
+    background: #fafafa;
+}
+
+
+#wcx-css-result
+.wcx-css-summary strong {
+
+    display: block;
+
+    margin-bottom: 3px;
+
+    font-size: 11px;
+}
+
+
+/* =========================================
+   SECTION TITLE
+========================================= */
+
+#wcx-css-result
+.wcx-css-section-title {
+
+    padding: 10px 12px;
+
+    font-weight: bold;
+
+    border-bottom:
+        1px solid #dddddd;
+
+    background: #f8f8f8;
+}
+
+
+/* =========================================
+   RULES
+========================================= */
+
+#wcx-css-result .wcx-css-rules {
+
+    max-height:
+        calc(100vh - 260px);
+
+    overflow-y: auto;
+}
+
+
+#wcx-css-result .wcx-css-rule {
+
+    display: flex;
+
+    border-bottom:
+        1px solid #eeeeee;
+}
+
+
+#wcx-css-result
+.wcx-css-rule-number {
+
+    width: 42px;
+
+    flex-shrink: 0;
+
+    padding: 12px 8px;
+
+    text-align: center;
+
+    color: #777777;
+
+    background: #fafafa;
+
+    border-right:
+        1px solid #eeeeee;
+}
+
+
+#wcx-css-result
+.wcx-css-rule-content {
+
+    min-width: 0;
+
+    padding: 10px 12px;
+
+    flex: 1;
+}
+
+
+#wcx-css-result
+.wcx-css-selector {
+
+    margin-bottom: 6px;
+
+    font-weight: bold;
+
+    word-break: break-word;
+}
+
+
+#wcx-css-result
+.wcx-css-rule pre {
+
+    margin: 0;
+
+    padding: 8px;
+
+    background: #f6f6f6;
+
+    border:
+        1px solid #e5e5e5;
+
+    border-radius: 3px;
+
+    white-space: pre-wrap;
+
+    word-break: break-word;
+
+    font-family:
+        Consolas,
+        Monaco,
+        monospace;
+
+    font-size: 11px;
+
+    line-height: 1.5;
+}
+
+
+/* =========================================
+   META
+========================================= */
+
+#wcx-css-result
+.wcx-css-meta {
+
+    display: flex;
+
+    flex-wrap: wrap;
+
+    gap: 6px;
+
+    margin-top: 7px;
+}
+
+
+#wcx-css-result
+.wcx-css-meta span {
+
+    padding: 3px 6px;
+
+    border:
+        1px solid #dddddd;
+
+    border-radius: 3px;
+
+    background: #fafafa;
+
+    font-size: 10px;
+}
+
+
+#wcx-css-result
+.wcx-css-properties {
+
+    margin-top: 7px;
+
+    font-size: 11px;
+
+    line-height: 1.5;
+
+    word-break: break-word;
+}
+
+
+/* =========================================
+   EMPTY / LIMIT
+========================================= */
+
+#wcx-css-result
+.wcx-css-empty {
+
+    padding: 30px;
+
+    text-align: center;
+
+    color: #777777;
+}
+
+
+#wcx-css-result
+.wcx-css-limit {
+
+    padding: 10px;
+
+    text-align: center;
+
+    border-top:
+        1px solid #dddddd;
+
+    background: #fafafa;
+
+    font-size: 11px;
+
+    color: #666666;
+}
+
+
+
+
+/* ============================================================
+   WCX CSS V2.1.1 - Dependency Inspector
+   ============================================================ */
+
+#wcx-css-analysis-panel {
+    position: fixed;
+    top: 14px;
+    right: 14px;
+    width: min(760px, calc(100vw - 28px));
+    height: calc(100vh - 28px);
+    max-height: calc(100vh - 28px);
+    background: #ffffff;
+    color: #111111;
+    border: 1px solid #cfcfcf;
+    border-radius: 6px;
+    box-shadow: 0 8px 35px rgba(0, 0, 0, 0.25);
+    z-index: 2147483647;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 13px;
+}
+
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+
+.wcx-css-analysis-header {
+    flex: 0 0 auto;
+    min-height: 46px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 14px;
+    border-bottom: 1px solid #d5d5d5;
+    background: #fafafa;
+}
+
+.wcx-css-analysis-title {
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.wcx-css-analysis-close {
+    border: 0;
+    background: transparent;
+    color: #111111;
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 3px 6px;
+}
+
+
+/* ============================================================
+   SUMMARY
+   ============================================================ */
+
+.wcx-css-analysis-summary {
+    flex: 0 0 auto;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    padding: 12px;
+    border-bottom: 1px solid #d5d5d5;
+    background: #ffffff;
+}
+
+.wcx-css-summary-item {
+    min-height: 52px;
+    padding: 9px;
+    border: 1px solid #dddddd;
+    border-radius: 4px;
+    background: #fafafa;
+}
+
+.wcx-css-summary-label {
+    font-size: 11px;
+    font-weight: 700;
+    margin-bottom: 7px;
+}
+
+.wcx-css-summary-value {
+    font-size: 13px;
+}
+
+
+/* ============================================================
+   SECTION TITLE
+   ============================================================ */
+
+.wcx-css-analysis-section-title {
+    flex: 0 0 auto;
+    padding: 10px 14px;
+    border-bottom: 1px solid #d5d5d5;
+    background: #f7f7f7;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+
+/* ============================================================
+   SCROLL CONTAINER
+   ============================================================ */
+
+.wcx-css-analysis-list {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 10px;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+}
+
+
+/* ============================================================
+   RULE CARD
+   ============================================================ */
+
+.wcx-css-rule-card {
+    margin-bottom: 10px;
+    border: 1px solid #dddddd;
+    border-radius: 5px;
+    background: #ffffff;
+    overflow: hidden;
+}
+
+.wcx-css-rule-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    padding: 9px 10px;
+    background: #fafafa;
+    border-bottom: 1px solid #e1e1e1;
+}
+
+.wcx-css-rule-number {
+    flex: 0 0 auto;
+    min-width: 25px;
+    color: #666666;
+    font-size: 11px;
+    text-align: center;
+}
+
+.wcx-css-rule-selector {
+    flex: 1 1 auto;
+    min-width: 0;
+    color: #b33100;
+    font-family: Consolas, Monaco, monospace;
+    font-size: 12px;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
+
+
+/* ============================================================
+   ORIGINAL CSS
+   ============================================================ */
+
+.wcx-css-rule-source {
+    margin: 0;
+    padding: 9px 10px;
+    background: #ffffff;
+    border-bottom: 1px solid #eeeeee;
+    color: #222222;
+    font-family: Consolas, Monaco, monospace;
+    font-size: 11px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    overflow-x: auto;
+}
+
+
+/* ============================================================
+   METADATA
+   ============================================================ */
+
+.wcx-css-rule-metadata {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    padding: 7px 10px;
+    border-bottom: 1px solid #eeeeee;
+}
+
+.wcx-css-badge {
+    display: inline-block;
+    padding: 3px 6px;
+    border: 1px solid #d5d5d5;
+    border-radius: 3px;
+    background: #f7f7f7;
+    color: #333333;
+    font-size: 10px;
+}
+
+
+/* ============================================================
+   DECLARATIONS
+   ============================================================ */
+
+.wcx-css-declaration-list {
+    padding: 7px 10px;
+}
+
+.wcx-css-declaration {
+    margin: 0 0 7px;
+    padding: 8px;
+    border: 1px solid #dddddd;
+    border-radius: 4px;
+    background: #ffffff;
+}
+
+.wcx-css-declaration:last-child {
+    margin-bottom: 0;
+}
+
+.wcx-css-declaration-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.wcx-css-property {
+    font-family: Consolas, Monaco, monospace;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.wcx-css-value {
+    margin-top: 5px;
+    font-family: Consolas, Monaco, monospace;
+    font-size: 11px;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+
+.wcx-css-declaration-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 6px;
+    color: #666666;
+    font-size: 10px;
+}
+
+
+/* ============================================================
+   STATUS
+   ============================================================ */
+
+.wcx-css-status {
+    display: inline-block;
+    flex: 0 0 auto;
+    padding: 3px 6px;
+    border-radius: 3px;
+    font-size: 9px;
+    font-weight: 700;
+}
+
+.wcx-status-winning {
+    border-left: 3px solid #555555;
+}
+
+.wcx-css-status.wcx-status-winning {
+    background: #eeeeee;
+    color: #111111;
+}
+
+.wcx-css-status.wcx-status-overridden {
+    background: #f5f5f5;
+    color: #777777;
+}
+
+.wcx-css-status.wcx-status-inactive {
+    background: #fafafa;
+    color: #888888;
+}
+
+.wcx-css-status.wcx-status-candidate {
+    background: #f7f7f7;
+    color: #555555;
+}
+
+
+/* ============================================================
+   MATCHED ELEMENTS
+   ============================================================ */
+
+.wcx-css-matched-elements {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 10px;
+    border-top: 1px solid #eeeeee;
+    background: #fafafa;
+}
+
+.wcx-css-matched-label {
+    font-size: 10px;
+    font-weight: 700;
+    margin-right: 2px;
+}
+
+.wcx-css-element-badge {
+    display: inline-block;
+    padding: 2px 5px;
+    border: 1px solid #d6d6d6;
+    border-radius: 3px;
+    background: #ffffff;
+    color: #555555;
+    font-family: Consolas, Monaco, monospace;
+    font-size: 9px;
+}
+
+.wcx-css-element-more {
+    color: #777777;
+    font-size: 9px;
+}
+
+
+/* ============================================================
+   EMPTY STATE
+   ============================================================ */
+
+.wcx-css-empty {
+    padding: 30px 15px;
+    text-align: center;
+    color: #666666;
+}
+
+
+/* ============================================================
+   SCROLLBAR
+   ============================================================ */
+
+.wcx-css-analysis-list::-webkit-scrollbar {
+    width: 10px;
+}
+
+.wcx-css-analysis-list::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.wcx-css-analysis-list::-webkit-scrollbar-thumb {
+    background: #bdbdbd;
+    border-radius: 5px;
+}
+
+.wcx-css-analysis-list::-webkit-scrollbar-thumb:hover {
+    background: #999999;
+}
+
+
+/* ============================================================
+   SMALL SCREEN
+   ============================================================ */
+
+@media (max-width: 600px) {
+    #wcx-css-analysis-panel {
+        top: 7px;
+        right: 7px;
+        width: calc(100vw - 14px);
+        height: calc(100vh - 14px);
+    }
+
+    .wcx-css-analysis-summary {
+        grid-template-columns: 1fr;
+    }
+}
