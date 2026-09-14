@@ -19,7 +19,7 @@
 (() => {
   "use strict";
 
-  const VERSION = "2.2.0-A7.3.1-R3.4";
+  const VERSION = "2.2.0-A7.3.1-R3.3";
 
   console.log(`[WCX] CSS Analyzer V${VERSION} loaded`);
 
@@ -1538,28 +1538,11 @@
        * for every constituent it controls.
        */
       const inlineSource = getInlineStyleSourceDeclaration(current, property);
-      let inlineFontShorthand = null;
-      try {
-        const directFont = current.style?.getPropertyValue("font") || "";
-        if (directFont.trim()) {
-          inlineFontShorthand = {
-            property: "font",
-            originalProperty: "font",
-            value: directFont.trim(),
-            priority: current.style.getPropertyPriority?.("font") || "",
-            sourceSelector: "<inline style>",
-          };
-        }
-      } catch (_) {}
 
-      const effectiveInlineSource =
-        inlineFontShorthand ||
-        (inlineSource &&
+      if (
+        inlineSource &&
         safeString(inlineSource.originalProperty).toLowerCase() === "font"
-          ? inlineSource
-          : null);
-
-      if (effectiveInlineSource) {
+      ) {
         const inlineComputedValue = normalizeComputedValue(
           getComputedPropertyValue(current, property),
         );
@@ -1572,7 +1555,7 @@
             sourceSelector: "<inline style>",
             sourceProperty: "font",
             sourceOriginalProperty: "font",
-            sourceValue: effectiveInlineSource.value,
+            sourceValue: inlineSource.value,
             sourceComputedValue: inlineComputedValue,
             distance,
             sourceType: "ancestor-inline-shorthand",

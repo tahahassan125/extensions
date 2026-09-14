@@ -19,7 +19,7 @@
 (() => {
   "use strict";
 
-  const VERSION = "2.2.0-A7.3.1-R3.4";
+  const VERSION = "2.2.0-A7.3.1-R3.1";
 
   console.log(`[WCX] CSS Analyzer V${VERSION} loaded`);
 
@@ -1438,81 +1438,6 @@
     };
   }
 
-  function getInlineStyleSourceDeclaration(element, property) {
-    if (!element || !property) return null;
-
-    const style = element.style;
-    if (!style) return null;
-
-    const normalizedProperty = safeString(property).toLowerCase();
-
-    /*
-     * A7.3.1-R3.3: source provenance must be read from the actual serialized
-     * inline style before consulting CSSOM longhands. Chrome may expose a
-     * shorthand through CSSStyleDeclaration differently after live mutation,
-     * while the style attribute remains the exact author source.
-     */
-    const styleAttribute = element.getAttribute?.("style") || "";
-    if (styleAttribute) {
-      const inlineDeclarations = splitCSSDeclarations(styleAttribute);
-      for (const declarationText of inlineDeclarations) {
-        const declaration = parseSourceDeclaration(declarationText);
-        if (!declaration) continue;
-
-        const declarationProperty =
-          safeString(declaration.property).toLowerCase();
-
-        if (
-          declarationProperty === normalizedProperty ||
-          (normalizedProperty !== "font" && declarationProperty === "font")
-        ) {
-          return {
-            property: declaration.property,
-            originalProperty: declaration.property,
-            value: safeString(declaration.value).trim(),
-            priority: declaration.priority || "",
-            sourceSelector: "<inline style>",
-          };
-        }
-      }
-    }
-
-    /*
-     * CSSStyleDeclaration remains the semantic fallback. For a constituent
-     * of `font`, inspect the shorthand before the constituent longhand so
-     * provenance is never lost.
-     */
-    const candidates = [];
-    if (normalizedProperty !== "font") {
-      candidates.push("font");
-    }
-    candidates.push(property);
-
-    for (const candidate of candidates) {
-      let value = "";
-      try {
-        value = style.getPropertyValue(candidate) || "";
-      } catch (_) {
-        value = "";
-      }
-
-      if (!value.trim()) continue;
-
-      return {
-        property: candidate,
-        originalProperty: candidate,
-        value: value.trim(),
-        priority:
-          typeof style.getPropertyPriority === "function"
-            ? style.getPropertyPriority(candidate) || ""
-            : "",
-        sourceSelector: "<inline style>",
-      };
-    }
-
-    return null;
-  }
-
   function resolveInheritanceConstituentSource(
     detection,
     property,
@@ -1532,34 +1457,14 @@
       distance += 1;
 
       /*
-       * A7.3.1-R3.2: inspect the live inline declaration before consulting
-       * stylesheet winners. Inline author declarations have higher cascade
-       * priority, and a `font:` shorthand must remain the provenance source
-       * for every constituent it controls.
+       * A7.3.1-R3.1: inline ancestor `font:` is a real source declaration
+       * and must outrank stylesheet candidates in source mapping when the
+       * browser's computed constituent value confirms that it is active.
        */
-      const inlineSource = getInlineStyleSourceDeclaration(current, property);
-      let inlineFontShorthand = null;
-      try {
-        const directFont = current.style?.getPropertyValue("font") || "";
-        if (directFont.trim()) {
-          inlineFontShorthand = {
-            property: "font",
-            originalProperty: "font",
-            value: directFont.trim(),
-            priority: current.style.getPropertyPriority?.("font") || "",
-            sourceSelector: "<inline style>",
-          };
-        }
-      } catch (_) {}
+      const inlineFontValue =
+        current?.style?.getPropertyValue?.("font") || "";
 
-      const effectiveInlineSource =
-        inlineFontShorthand ||
-        (inlineSource &&
-        safeString(inlineSource.originalProperty).toLowerCase() === "font"
-          ? inlineSource
-          : null);
-
-      if (effectiveInlineSource) {
+      if (inlineFontValue.trim()) {
         const inlineComputedValue = normalizeComputedValue(
           getComputedPropertyValue(current, property),
         );
@@ -1572,7 +1477,7 @@
             sourceSelector: "<inline style>",
             sourceProperty: "font",
             sourceOriginalProperty: "font",
-            sourceValue: effectiveInlineSource.value,
+            sourceValue: inlineFontValue.trim(),
             sourceComputedValue: inlineComputedValue,
             distance,
             sourceType: "ancestor-inline-shorthand",
@@ -1699,39 +1604,6 @@
 
     while (current) {
       distance += 1;
-
-      /* Inline `font:` is checked first because it outranks all author
-       * stylesheet declarations and is the exact source we need to export. */
-      const inlineSource = getInlineStyleSourceDeclaration(current, "font");
-      if (
-        inlineSource &&
-        safeString(inlineSource.originalProperty).toLowerCase() === "font"
-      ) {
-        const sourceComputedValue = normalizeComputedValue(
-          getComputedPropertyValue(current, "font"),
-        );
-
-        if (
-          sourceComputedValue &&
-          sourceComputedValue === normalizeComputedValue(detection.computedValue)
-        ) {
-          return {
-            ...detection,
-            sourceElement: getNodeLabel(current),
-            sourceElementNode: current,
-            sourceSelector: "<inline style>",
-            sourceProperty: "font",
-            sourceOriginalProperty: "font",
-            sourceValue: inlineSource.value,
-            sourceComputedValue,
-            distance,
-            sourceType: "ancestor-inline-shorthand",
-            status: "inherited-source-mapped",
-            valid: true,
-          };
-        }
-      }
-
       const winner = winnersByElement.get(current)?.get("font") || null;
 
       if (winner) {

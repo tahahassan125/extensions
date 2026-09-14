@@ -19,7 +19,7 @@
 (() => {
   "use strict";
 
-  const VERSION = "2.2.0-A7.3.1-R3.4";
+  const VERSION = "2.2.0-A7.3.1-R3.2";
 
   console.log(`[WCX] CSS Analyzer V${VERSION} loaded`);
 
@@ -1447,40 +1447,10 @@
     const normalizedProperty = safeString(property).toLowerCase();
 
     /*
-     * A7.3.1-R3.3: source provenance must be read from the actual serialized
-     * inline style before consulting CSSOM longhands. Chrome may expose a
-     * shorthand through CSSStyleDeclaration differently after live mutation,
-     * while the style attribute remains the exact author source.
-     */
-    const styleAttribute = element.getAttribute?.("style") || "";
-    if (styleAttribute) {
-      const inlineDeclarations = splitCSSDeclarations(styleAttribute);
-      for (const declarationText of inlineDeclarations) {
-        const declaration = parseSourceDeclaration(declarationText);
-        if (!declaration) continue;
-
-        const declarationProperty =
-          safeString(declaration.property).toLowerCase();
-
-        if (
-          declarationProperty === normalizedProperty ||
-          (normalizedProperty !== "font" && declarationProperty === "font")
-        ) {
-          return {
-            property: declaration.property,
-            originalProperty: declaration.property,
-            value: safeString(declaration.value).trim(),
-            priority: declaration.priority || "",
-            sourceSelector: "<inline style>",
-          };
-        }
-      }
-    }
-
-    /*
-     * CSSStyleDeclaration remains the semantic fallback. For a constituent
-     * of `font`, inspect the shorthand before the constituent longhand so
-     * provenance is never lost.
+     * Prefer CSSStyleDeclaration because it is the browser's authoritative
+     * representation of the live inline declaration. For a constituent of
+     * `font`, explicitly inspect the shorthand first so provenance is never
+     * lost merely because CSSOM exposes expanded longhands.
      */
     const candidates = [];
     if (normalizedProperty !== "font") {
@@ -1508,6 +1478,27 @@
             : "",
         sourceSelector: "<inline style>",
       };
+    }
+
+    /*
+     * Fallback for environments where getPropertyValue() does not expose a
+     * shorthand after live style mutation. Reading the serialized style
+     * attribute still preserves the actual author declaration.
+     */
+    const styleAttribute = element.getAttribute?.("style") || "";
+    if (styleAttribute && normalizedProperty !== "font") {
+      const fontMatch = styleAttribute.match(
+        /(?:^|;)\s*font\s*:\s*([^;]+)/i,
+      );
+      if (fontMatch && fontMatch[1]?.trim()) {
+        return {
+          property: "font",
+          originalProperty: "font",
+          value: fontMatch[1].trim(),
+          priority: "",
+          sourceSelector: "<inline style>",
+        };
+      }
     }
 
     return null;
@@ -1538,28 +1529,11 @@
        * for every constituent it controls.
        */
       const inlineSource = getInlineStyleSourceDeclaration(current, property);
-      let inlineFontShorthand = null;
-      try {
-        const directFont = current.style?.getPropertyValue("font") || "";
-        if (directFont.trim()) {
-          inlineFontShorthand = {
-            property: "font",
-            originalProperty: "font",
-            value: directFont.trim(),
-            priority: current.style.getPropertyPriority?.("font") || "",
-            sourceSelector: "<inline style>",
-          };
-        }
-      } catch (_) {}
 
-      const effectiveInlineSource =
-        inlineFontShorthand ||
-        (inlineSource &&
+      if (
+        inlineSource &&
         safeString(inlineSource.originalProperty).toLowerCase() === "font"
-          ? inlineSource
-          : null);
-
-      if (effectiveInlineSource) {
+      ) {
         const inlineComputedValue = normalizeComputedValue(
           getComputedPropertyValue(current, property),
         );
@@ -1572,7 +1546,7 @@
             sourceSelector: "<inline style>",
             sourceProperty: "font",
             sourceOriginalProperty: "font",
-            sourceValue: effectiveInlineSource.value,
+            sourceValue: inlineSource.value,
             sourceComputedValue: inlineComputedValue,
             distance,
             sourceType: "ancestor-inline-shorthand",
