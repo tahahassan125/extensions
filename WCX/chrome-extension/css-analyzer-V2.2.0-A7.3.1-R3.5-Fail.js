@@ -19,7 +19,7 @@
 (() => {
   "use strict";
 
-  const VERSION = "2.2.0-A7.3.1-R3.6";
+  const VERSION = "2.2.0-A7.3.1-R3.5";
 
   console.log(`[WCX] CSS Analyzer V${VERSION} loaded`);
 
@@ -1518,53 +1518,6 @@
     return null;
   }
 
-  function getInlineFontShorthandSourceForProperty(element, property) {
-    if (!element || !property) return null;
-
-    const target = safeString(property).toLowerCase();
-    const fontConstituents = new Set([
-      "font-style",
-      "font-variant",
-      "font-weight",
-      "font-stretch",
-      "font-size",
-      "line-height",
-      "font-family",
-    ]);
-
-    if (!fontConstituents.has(target)) return null;
-
-    const styleText = element.getAttribute?.("style") || "";
-    if (!styleText) return null;
-
-    const declarations = splitCSSDeclarations(styleText);
-    let lastAffecting = null;
-
-    for (const declarationText of declarations) {
-      const declaration = parseSourceDeclaration(declarationText);
-      if (!declaration) continue;
-
-      const name = safeString(declaration.property).toLowerCase();
-      if (name === "font" || name === target) {
-        lastAffecting = declaration;
-      }
-    }
-
-    if (!lastAffecting) return null;
-
-    if (safeString(lastAffecting.property).toLowerCase() !== "font") {
-      return null;
-    }
-
-    return {
-      property: "font",
-      originalProperty: "font",
-      value: safeString(lastAffecting.value).trim(),
-      priority: lastAffecting.priority || "",
-      sourceSelector: "<inline style>",
-    };
-  }
-
   function resolveInheritanceConstituentSource(
     detection,
     property,
@@ -1589,33 +1542,20 @@
        * priority, and a `font:` shorthand must remain the provenance source
        * for every constituent it controls.
        */
-      /*
-       * R3.6: resolve inline shorthand provenance from the serialized style
-       * attribute first. This makes the source decision deterministic and
-       * independent of CSSStyleDeclaration shorthand serialization. The
-       * latest inline declaration affecting the constituent wins; therefore
-       * a later font-family longhand correctly displaces an earlier font: shorthand.
-       */
-      const inlineShorthandSource =
-        getInlineFontShorthandSourceForProperty(current, property);
-
       const inlineSource = getInlineStyleSourceDeclaration(current, property);
-
-      let inlineFontShorthand = inlineShorthandSource;
-      if (!inlineFontShorthand) {
-        try {
-          const directFont = current.style?.getPropertyValue("font") || "";
-          if (directFont.trim()) {
-            inlineFontShorthand = {
-              property: "font",
-              originalProperty: "font",
-              value: directFont.trim(),
-              priority: current.style.getPropertyPriority?.("font") || "",
-              sourceSelector: "<inline style>",
-            };
-          }
-        } catch (_) {}
-      }
+      let inlineFontShorthand = null;
+      try {
+        const directFont = current.style?.getPropertyValue("font") || "";
+        if (directFont.trim()) {
+          inlineFontShorthand = {
+            property: "font",
+            originalProperty: "font",
+            value: directFont.trim(),
+            priority: current.style.getPropertyPriority?.("font") || "",
+            sourceSelector: "<inline style>",
+          };
+        }
+      } catch (_) {}
 
       const effectiveInlineSource =
         inlineFontShorthand ||
