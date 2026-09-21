@@ -836,6 +836,20 @@ function analyzeSelectedCSS(data) {
 
   console.log("🔥 WCX CSS V2 ANALYSIS:", result);
 
+  console.log(
+    "🔥 WCX UNRESOLVED INHERITANCE:",
+    result.inheritance.detections.filter((d) =>
+      JSON.stringify(d).toLowerCase().includes("unresolved"),
+    ),
+  );
+
+  console.log(
+    "🔥 WCX CURSOR INHERITANCE:",
+    result.inheritance.detections.find(
+      (d) => d.element === "strong" && d.property === "cursor",
+    ),
+  );
+
   console.log("🔥 WCX CSS V2 SUMMARY:", result.summary);
 
   showCSSAnalysisResult(result);
