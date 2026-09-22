@@ -1,6 +1,6 @@
 /**
  * WCX CSS Analyzer
- * V2.2.0-A7.3 - Inheritance Source Mapping
+ * V2.3.1-R1 - Responsive Dependency Model
  *
  * Purpose:
  * - Discover CSS affecting a selected DOM component
@@ -11,6 +11,7 @@
  * - Expand CSS shorthand declarations safely
  * - Preserve declaration-level source order
  * - Prepare CSS data for later standalone reconstruction
+ * - Analyze responsive rendering dependencies
  *
  * Public API:
  * window.WCX_CSS
@@ -19,7 +20,7 @@
 (() => {
   "use strict";
 
-  const VERSION = "2.2.0-A7.3.1-R3.6";
+  const VERSION = "2.3.1-R1";
 
   console.log(`[WCX] CSS Analyzer V${VERSION} loaded`);
 
@@ -69,9 +70,7 @@
     return {
       label: getNodeLabel(element),
 
-      tagName: element.tagName
-        ? element.tagName.toLowerCase()
-        : "",
+      tagName: element.tagName ? element.tagName.toLowerCase() : "",
 
       id: element.id || "",
 
@@ -121,15 +120,9 @@
 
     let normalized = safeString(selector);
 
-    normalized = normalized.replace(
-      /(["'])(?:\\.|(?!\1).)*\1/g,
-      "",
-    );
+    normalized = normalized.replace(/(["'])(?:\\.|(?!\1).)*\1/g, "");
 
-    normalized = normalized.replace(
-      /:where\(([^()]*)\)/g,
-      "$1",
-    );
+    normalized = normalized.replace(/:where\(([^()]*)\)/g, "$1");
 
     let a = 0;
     let b = 0;
@@ -153,15 +146,13 @@
       b += attributeMatches.length;
     }
 
-    const pseudoElementMatches =
-      normalized.match(/::[\w-]+/g);
+    const pseudoElementMatches = normalized.match(/::[\w-]+/g);
 
     if (pseudoElementMatches) {
       c += pseudoElementMatches.length;
     }
 
-    const pseudoClassMatches =
-      normalized.match(/:(?!:)[\w-]+(?:\([^)]*\))?/g);
+    const pseudoClassMatches = normalized.match(/:(?!:)[\w-]+(?:\([^)]*\))?/g);
 
     if (pseudoClassMatches) {
       b += pseudoClassMatches.length;
@@ -175,8 +166,7 @@
       .replace(/:(?!:)[\w-]+(?:\([^)]*\))?/g, " ")
       .replace(/[>+~, *]/g, " ");
 
-    const typeMatches =
-      typePart.match(/(?:^|\s)([a-zA-Z][\w-]*)/g);
+    const typeMatches = typePart.match(/(?:^|\s)([a-zA-Z][\w-]*)/g);
 
     if (typeMatches) {
       c += typeMatches.length;
@@ -308,9 +298,7 @@
   }
 
   function isKnownShorthandProperty(property) {
-    return SAFE_SHORTHAND_PROPERTIES.has(
-      safeString(property).toLowerCase(),
-    );
+    return SAFE_SHORTHAND_PROPERTIES.has(safeString(property).toLowerCase());
   }
 
   /*
@@ -323,8 +311,7 @@
    */
 
   function expandShorthandDeclaration(property, value, important) {
-    const normalizedProperty = safeString(property)
-      .toLowerCase();
+    const normalizedProperty = safeString(property).toLowerCase();
 
     const normalizedValue = safeString(value);
 
@@ -370,8 +357,7 @@
           continue;
         }
 
-        const expandedValue =
-          testStyle.getPropertyValue(expandedProperty);
+        const expandedValue = testStyle.getPropertyValue(expandedProperty);
 
         if (!expandedValue) {
           continue;
@@ -420,8 +406,7 @@
     important,
     declarationIndex = 0,
   ) {
-    const normalizedProperty = safeString(property)
-      .toLowerCase();
+    const normalizedProperty = safeString(property).toLowerCase();
 
     const normalizedValue = normalizeWhitespace(value);
 
@@ -465,8 +450,7 @@
       /*
        * Keep variable references at declaration level.
        */
-      variableReferences:
-        extractVariableReferences(normalizedValue),
+      variableReferences: extractVariableReferences(normalizedValue),
     };
   }
 
@@ -605,13 +589,9 @@
         continue;
       }
 
-      const property = chunk
-        .slice(0, colonIndex)
-        .trim();
+      const property = chunk.slice(0, colonIndex).trim();
 
-      let value = chunk
-        .slice(colonIndex + 1)
-        .trim();
+      let value = chunk.slice(colonIndex + 1).trim();
 
       if (!property || !value) {
         continue;
@@ -619,13 +599,12 @@
 
       let important = false;
 
-      value = value.replace(
-        /\s*!important\s*$/i,
-        () => {
+      value = value
+        .replace(/\s*!important\s*$/i, () => {
           important = true;
           return "";
-        },
-      ).trim();
+        })
+        .trim();
 
       if (!value) {
         continue;
@@ -862,14 +841,12 @@
     return {
       property,
       value: normalizeWhitespace(value),
-      important
+      important,
     };
   }
 
   function getSourceDeclarations(sourceCssText) {
-    const pieces = splitCSSDeclarations(
-      extractDeclarationBlock(sourceCssText)
-    );
+    const pieces = splitCSSDeclarations(extractDeclarationBlock(sourceCssText));
 
     const declarations = [];
 
@@ -879,7 +856,7 @@
 
       declarations.push({
         ...parsed,
-        declarationIndex: i
+        declarationIndex: i,
       });
     }
 
@@ -901,8 +878,8 @@
             sourceDeclaration.property,
             sourceDeclaration.value,
             sourceDeclaration.important,
-            sourceDeclaration.declarationIndex
-          )
+            sourceDeclaration.declarationIndex,
+          ),
         );
       }
 
@@ -918,12 +895,7 @@
       const priority = style.getPropertyPriority(property);
 
       declarations.push(
-        createDeclarationModel(
-          property,
-          value,
-          priority === "important",
-          i
-        )
+        createDeclarationModel(property, value, priority === "important", i),
       );
     }
 
@@ -969,9 +941,7 @@
       "list-style-image",
     ]);
 
-    return inherited.has(
-      safeString(property).toLowerCase(),
-    );
+    return inherited.has(safeString(property).toLowerCase());
   }
 
   /* =========================================================
@@ -1025,8 +995,7 @@
   }
 
   function detectInheritedProperties(elements, winners) {
-    const winningPropertiesByElement =
-      getWinningPropertiesByElement(winners);
+    const winningPropertiesByElement = getWinningPropertiesByElement(winners);
 
     const detections = [];
 
@@ -1072,14 +1041,12 @@
         if (!isInheritedProperty(property)) continue;
         if (winningProperties.has(property)) continue;
 
-        const targetValue =
-          normalizeComputedValue(
-            computed.getPropertyValue(property),
-          );
-        const parentValue =
-          normalizeComputedValue(
-            getComputedPropertyValue(parent, property),
-          );
+        const targetValue = normalizeComputedValue(
+          computed.getPropertyValue(property),
+        );
+        const parentValue = normalizeComputedValue(
+          getComputedPropertyValue(parent, property),
+        );
 
         if (!targetValue || !parentValue) continue;
         if (targetValue !== parentValue) continue;
@@ -1112,16 +1079,11 @@
   ========================================================= */
 
   function isCSSWideKeyword(value) {
-    const normalized =
-      safeString(value).trim().toLowerCase();
+    const normalized = safeString(value).trim().toLowerCase();
 
-    return [
-      "inherit",
-      "initial",
-      "unset",
-      "revert",
-      "revert-layer",
-    ].includes(normalized);
+    return ["inherit", "initial", "unset", "revert", "revert-layer"].includes(
+      normalized,
+    );
   }
 
   function buildAncestorCascade(ancestors, stylesheets) {
@@ -1135,10 +1097,7 @@
      * the actual ancestor chain (body, section parents, etc.).
      */
     for (const stylesheet of safeArray(stylesheets)) {
-      if (
-        !stylesheet?.accessible ||
-        !stylesheet.cssRules
-      ) {
+      if (!stylesheet?.accessible || !stylesheet.cssRules) {
         continue;
       }
 
@@ -1163,21 +1122,11 @@
     }
 
     /* Ancestor inline styles are also legitimate inheritance sources. */
-    collectInlineStyles(
-      ancestors,
-      sourceRules,
-    );
+    collectInlineStyles(ancestors, sourceRules);
 
-    const declarations =
-      createDeclarationRecords(
-        sourceRules,
-      );
+    const declarations = createDeclarationRecords(sourceRules);
 
-    const cascade =
-      determineWinners(
-        ancestors,
-        declarations,
-      );
+    const cascade = determineWinners(ancestors, declarations);
 
     return {
       rules: sourceRules,
@@ -1198,8 +1147,7 @@
       }
 
       const propertyMap = map.get(winner.element);
-      const property =
-        safeString(winner.property).toLowerCase();
+      const property = safeString(winner.property).toLowerCase();
 
       if (!property || isCustomPropertyName(property)) {
         continue;
@@ -1216,8 +1164,7 @@
   ========================================================= */
 
   function getInheritanceKeyword(value) {
-    const normalized =
-      safeString(value).trim().toLowerCase();
+    const normalized = safeString(value).trim().toLowerCase();
 
     if (!normalized) return null;
 
@@ -1269,8 +1216,7 @@
           index.set(element, new Map());
         }
 
-        const property =
-          safeString(winner.property).toLowerCase();
+        const property = safeString(winner.property).toLowerCase();
 
         if (!property || isCustomPropertyName(property)) continue;
 
@@ -1296,37 +1242,22 @@
     sourceElement,
     distance,
   ) {
-    const sourceValue =
-      safeString(
-        source.originalValue ||
-        source.value ||
-        "",
-      ).trim();
+    const sourceValue = safeString(
+      source.originalValue || source.value || "",
+    ).trim();
 
-    const sourceComputedValue =
-      normalizeComputedValue(
-        getComputedPropertyValue(
-          sourceElement,
-          detection.property,
-        ),
-      );
+    const sourceComputedValue = normalizeComputedValue(
+      getComputedPropertyValue(sourceElement, detection.property),
+    );
 
     return {
       ...detection,
-      sourceElement:
-        getNodeLabel(sourceElement),
-      sourceElementNode:
-        sourceElement,
-      sourceSelector:
-        source.selector ||
-        buildStableSelector(sourceElement),
-      sourceProperty:
-        source.property ||
-        detection.property,
+      sourceElement: getNodeLabel(sourceElement),
+      sourceElementNode: sourceElement,
+      sourceSelector: source.selector || buildStableSelector(sourceElement),
+      sourceProperty: source.property || detection.property,
       sourceOriginalProperty:
-        source.originalProperty ||
-        source.property ||
-        detection.property,
+        source.originalProperty || source.property || detection.property,
       sourceValue,
       sourceComputedValue,
       distance,
@@ -1334,63 +1265,37 @@
         source.rule?.kind === "inline"
           ? "ancestor-inline"
           : "ancestor-css-rule",
-      status:
-        "inherited-source-mapped",
+      status: "inherited-source-mapped",
       valid:
         !!sourceComputedValue &&
-        sourceComputedValue ===
-          normalizeComputedValue(detection.computedValue),
+        sourceComputedValue === normalizeComputedValue(detection.computedValue),
     };
   }
 
-  function createInheritanceResetRecord(
-    detection,
-    winner,
-    element,
-    distance,
-  ) {
-    const sourceValue =
-      safeString(
-        winner.originalValue ||
-        winner.value ||
-        "",
-      ).trim();
+  function createInheritanceResetRecord(detection, winner, element, distance) {
+    const sourceValue = safeString(
+      winner.originalValue || winner.value || "",
+    ).trim();
 
     return {
       ...detection,
-      sourceElement:
-        getNodeLabel(element),
-      sourceElementNode:
-        element,
-      sourceSelector:
-        winner.selector ||
-        buildStableSelector(element),
-      sourceProperty:
-        winner.property ||
-        detection.property,
+      sourceElement: getNodeLabel(element),
+      sourceElementNode: element,
+      sourceSelector: winner.selector || buildStableSelector(element),
+      sourceProperty: winner.property || detection.property,
       sourceOriginalProperty:
-        winner.originalProperty ||
-        winner.property ||
-        detection.property,
+        winner.originalProperty || winner.property || detection.property,
       sourceValue,
-      sourceComputedValue:
-        normalizeComputedValue(
-          getComputedPropertyValue(
-            element,
-            detection.property,
-          ),
-        ),
+      sourceComputedValue: normalizeComputedValue(
+        getComputedPropertyValue(element, detection.property),
+      ),
       distance,
       sourceType: "ancestor-css-wide-reset",
       status: "inherited-source-reset",
       valid:
         normalizeComputedValue(
-          getComputedPropertyValue(
-            element,
-            detection.property,
-          ),
-        ) ===
-        normalizeComputedValue(detection.computedValue),
+          getComputedPropertyValue(element, detection.property),
+        ) === normalizeComputedValue(detection.computedValue),
     };
   }
 
@@ -1415,9 +1320,7 @@
       document.documentElement.appendChild(probe);
 
       const computed = window.getComputedStyle(probe);
-      const value = normalizeComputedValue(
-        computed.getPropertyValue(property),
-      );
+      const value = normalizeComputedValue(computed.getPropertyValue(property));
 
       probe.remove();
       return value;
@@ -1464,8 +1367,9 @@
         const declaration = parseSourceDeclaration(declarationText);
         if (!declaration) continue;
 
-        const declarationProperty =
-          safeString(declaration.property).toLowerCase();
+        const declarationProperty = safeString(
+          declaration.property,
+        ).toLowerCase();
 
         if (
           declarationProperty === normalizedProperty ||
@@ -1596,8 +1500,10 @@
        * latest inline declaration affecting the constituent wins; therefore
        * a later font-family longhand correctly displaces an earlier font: shorthand.
        */
-      const inlineShorthandSource =
-        getInlineFontShorthandSourceForProperty(current, property);
+      const inlineShorthandSource = getInlineFontShorthandSourceForProperty(
+        current,
+        property,
+      );
 
       const inlineSource = getInlineStyleSourceDeclaration(current, property);
 
@@ -1647,11 +1553,9 @@
         }
       }
 
-      const propertyWinners =
-        winnersByElement.get(current) || new Map();
+      const propertyWinners = winnersByElement.get(current) || new Map();
 
-      const winner =
-        propertyWinners.get(property) || null;
+      const winner = propertyWinners.get(property) || null;
 
       /*
        * A7.3.1-R3:
@@ -1662,27 +1566,20 @@
        */
       const shorthandWinner =
         winner &&
-        safeString(
-          winner.originalProperty || "",
-        ).toLowerCase() === "font"
+        safeString(winner.originalProperty || "").toLowerCase() === "font"
           ? winner
           : Array.from(propertyWinners.values()).find(
               (candidate) =>
-                safeString(
-                  candidate?.originalProperty || "",
-                ).toLowerCase() === "font" &&
-                safeArray(
-                  candidate?.expandedProperties,
-                ).includes(property),
+                safeString(candidate?.originalProperty || "").toLowerCase() ===
+                  "font" &&
+                safeArray(candidate?.expandedProperties).includes(property),
             ) || null;
 
       const effectiveWinner = shorthandWinner || winner;
 
       if (effectiveWinner) {
         const sourceValue = safeString(
-          effectiveWinner.originalValue ||
-          effectiveWinner.value ||
-          "",
+          effectiveWinner.originalValue || effectiveWinner.value || "",
         ).trim();
 
         if (isInheritanceResetKeyword(property, sourceValue)) {
@@ -1695,9 +1592,13 @@
               property,
               sourceElement: getNodeLabel(current),
               sourceElementNode: current,
-              sourceSelector: effectiveWinner.selector || buildStableSelector(current),
+              sourceSelector:
+                effectiveWinner.selector || buildStableSelector(current),
               sourceProperty: effectiveWinner.property || property,
-              sourceOriginalProperty: effectiveWinner.originalProperty || effectiveWinner.property || property,
+              sourceOriginalProperty:
+                effectiveWinner.originalProperty ||
+                effectiveWinner.property ||
+                property,
               sourceValue,
               sourceComputedValue,
               distance,
@@ -1724,9 +1625,13 @@
             property,
             sourceElement: getNodeLabel(current),
             sourceElementNode: current,
-            sourceSelector: effectiveWinner.selector || buildStableSelector(current),
+            sourceSelector:
+              effectiveWinner.selector || buildStableSelector(current),
             sourceProperty: effectiveWinner.property || property,
-            sourceOriginalProperty: effectiveWinner.originalProperty || effectiveWinner.property || property,
+            sourceOriginalProperty:
+              effectiveWinner.originalProperty ||
+              effectiveWinner.property ||
+              property,
             sourceValue,
             sourceComputedValue,
             distance,
@@ -1748,10 +1653,7 @@
     return null;
   }
 
-  function resolveInheritedFontShorthand(
-    detection,
-    winnersByElement,
-  ) {
+  function resolveInheritedFontShorthand(detection, winnersByElement) {
     const element = detection?.elementNode;
     if (!element || detection.property !== "font") return null;
 
@@ -1778,7 +1680,8 @@
 
         if (
           sourceComputedValue &&
-          sourceComputedValue === normalizeComputedValue(detection.computedValue)
+          sourceComputedValue ===
+            normalizeComputedValue(detection.computedValue)
         ) {
           return {
             ...detection,
@@ -1813,14 +1716,18 @@
           const sourceComputedValue = normalizeComputedValue(
             getComputedPropertyValue(current, "font"),
           );
-          if (sourceComputedValue === normalizeComputedValue(detection.computedValue)) {
+          if (
+            sourceComputedValue ===
+            normalizeComputedValue(detection.computedValue)
+          ) {
             return {
               ...detection,
               sourceElement: getNodeLabel(current),
               sourceElementNode: current,
               sourceSelector: winner.selector || buildStableSelector(current),
               sourceProperty: winner.property || "font",
-              sourceOriginalProperty: winner.originalProperty || winner.property || "font",
+              sourceOriginalProperty:
+                winner.originalProperty || winner.property || "font",
               sourceValue,
               sourceComputedValue,
               distance,
@@ -1837,7 +1744,8 @@
 
         if (
           sourceComputedValue &&
-          sourceComputedValue === normalizeComputedValue(detection.computedValue)
+          sourceComputedValue ===
+            normalizeComputedValue(detection.computedValue)
         ) {
           return {
             ...detection,
@@ -1845,7 +1753,8 @@
             sourceElementNode: current,
             sourceSelector: winner.selector || buildStableSelector(current),
             sourceProperty: winner.property || "font",
-            sourceOriginalProperty: winner.originalProperty || winner.property || "font",
+            sourceOriginalProperty:
+              winner.originalProperty || winner.property || "font",
             sourceValue,
             sourceComputedValue,
             distance,
@@ -1901,10 +1810,7 @@
     return null;
   }
 
-  function resolveInheritanceSourceChain(
-    detection,
-    winnersByElement,
-  ) {
+  function resolveInheritanceSourceChain(detection, winnersByElement) {
     const element = detection?.elementNode;
 
     if (!element) {
@@ -1935,8 +1841,7 @@
       }
     }
 
-    const targetComputedValue =
-      normalizeComputedValue(detection.computedValue);
+    const targetComputedValue = normalizeComputedValue(detection.computedValue);
 
     let current = getParentElement(element);
     let distance = 0;
@@ -1945,34 +1850,25 @@
       distance += 1;
 
       const winner =
-        winnersByElement
-          .get(current)
-          ?.get(detection.property) || null;
+        winnersByElement.get(current)?.get(detection.property) || null;
 
       if (winner) {
-        const sourceValue =
-          safeString(
-            winner.originalValue ||
-            winner.value ||
-            "",
-          ).trim();
+        const sourceValue = safeString(
+          winner.originalValue || winner.value || "",
+        ).trim();
 
         /*
          * `initial` is a terminal reset for an inherited property. The
          * child's value can still equal the browser's initial value, but
          * that must not be falsely attributed to a farther ancestor.
          */
-        if (isInheritanceResetKeyword(
-          detection.property,
-          sourceValue,
-        )) {
-          const resetRecord =
-            createInheritanceResetRecord(
-              detection,
-              winner,
-              current,
-              distance,
-            );
+        if (isInheritanceResetKeyword(detection.property, sourceValue)) {
+          const resetRecord = createInheritanceResetRecord(
+            detection,
+            winner,
+            current,
+            distance,
+          );
 
           if (resetRecord.valid) {
             return resetRecord;
@@ -1988,21 +1884,14 @@
          * rather than treating the keyword itself as the originating
          * value.
          */
-        if (isInheritanceDelegatingKeyword(
-          detection.property,
-          sourceValue,
-        )) {
+        if (isInheritanceDelegatingKeyword(detection.property, sourceValue)) {
           current = getParentElement(current);
           continue;
         }
 
-        const sourceComputedValue =
-          normalizeComputedValue(
-            getComputedPropertyValue(
-              current,
-              detection.property,
-            ),
-          );
+        const sourceComputedValue = normalizeComputedValue(
+          getComputedPropertyValue(current, detection.property),
+        );
 
         if (
           sourceComputedValue &&
@@ -2026,14 +1915,9 @@
       current = getParentElement(current);
     }
 
-    const initialValue = getInitialComputedPropertyValue(
-      detection.property,
-    );
+    const initialValue = getInitialComputedPropertyValue(detection.property);
 
-    if (
-      initialValue &&
-      initialValue === targetComputedValue
-    ) {
+    if (initialValue && initialValue === targetComputedValue) {
       return createInheritanceDefaultRecord(detection);
     }
 
@@ -2045,20 +1929,18 @@
     ancestorCascade,
     componentCascade,
   ) {
-    const winnersByElement =
-      buildInheritanceWinnerIndex(
-        ancestorCascade,
-        componentCascade,
-      );
+    const winnersByElement = buildInheritanceWinnerIndex(
+      ancestorCascade,
+      componentCascade,
+    );
 
     const mapped = [];
 
     for (const detection of safeArray(detections)) {
-      const resolved =
-        resolveInheritanceSourceChain(
-          detection,
-          winnersByElement,
-        );
+      const resolved = resolveInheritanceSourceChain(
+        detection,
+        winnersByElement,
+      );
 
       if (resolved) {
         mapped.push(resolved);
@@ -2083,7 +1965,6 @@
 
     return mapped;
   }
-
 
   /* =========================================================
      SELECTOR MATCHING
@@ -2120,10 +2001,7 @@
     }
   }
 
-  function selectorMatchesComponent(
-    selector,
-    elements,
-  ) {
+  function selectorMatchesComponent(selector, elements) {
     const matchedElements = [];
 
     for (const element of safeArray(elements)) {
@@ -2174,21 +2052,12 @@
     }
   }
 
-  function walkCSSRules(
-    rules,
-    context,
-    stylesheetMeta,
-    output,
-  ) {
+  function walkCSSRules(rules, context, stylesheetMeta, output) {
     if (!rules) {
       return;
     }
 
-    for (
-      let index = 0;
-      index < rules.length;
-      index++
-    ) {
+    for (let index = 0; index < rules.length; index++) {
       const rule = rules[index];
 
       if (!rule) {
@@ -2198,8 +2067,7 @@
       const ruleType = getRuleTypeName(rule);
 
       if (ruleType === "style") {
-        const selectorText =
-          safeString(rule.selectorText);
+        const selectorText = safeString(rule.selectorText);
 
         const selectors = selectorText
           .split(",")
@@ -2207,21 +2075,18 @@
           .filter(Boolean);
 
         for (const selector of selectors) {
-          const matchedElements =
-            selectorMatchesComponent(
-              selector,
-              context.elements,
-            );
+          const matchedElements = selectorMatchesComponent(
+            selector,
+            context.elements,
+          );
 
           if (!matchedElements.length) {
             continue;
           }
 
-          const specificity =
-            calculateSpecificity(selector);
+          const specificity = calculateSpecificity(selector);
 
-          const declarations =
-            getStyleDeclarations(rule.style, rule.cssText);
+          const declarations = getStyleDeclarations(rule.style, rule.cssText);
 
           output.push({
             kind: "css-rule",
@@ -2236,30 +2101,24 @@
 
             matchedElements,
 
-            matchedElementLabels:
-              matchedElements.map(getNodeLabel),
+            matchedElementLabels: matchedElements.map(getNodeLabel),
 
             /*
              * V2.1.2
              */
-            matchedElementDetails:
-              matchedElements
-                .map(getElementMetadata)
-                .filter(Boolean),
+            matchedElementDetails: matchedElements
+              .map(getElementMetadata)
+              .filter(Boolean),
 
             specificity,
 
-            stylesheetIndex:
-              stylesheetMeta.index,
+            stylesheetIndex: stylesheetMeta.index,
 
-            stylesheetHref:
-              stylesheetMeta.href,
+            stylesheetHref: stylesheetMeta.href,
 
-            stylesheetTitle:
-              stylesheetMeta.title,
+            stylesheetTitle: stylesheetMeta.title,
 
-            stylesheetFramework:
-              stylesheetMeta.framework,
+            stylesheetFramework: stylesheetMeta.framework,
 
             ruleIndex: index,
 
@@ -2267,22 +2126,17 @@
 
             media: context.media || null,
 
-            supports:
-              context.supports || null,
+            supports: context.supports || null,
 
-            mediaActive:
-              mediaMatches(context.media),
+            mediaActive: mediaMatches(context.media),
 
-            supportsActive:
-              supportsMatches(context.supports),
+            supportsActive: supportsMatches(context.supports),
 
             ruleType,
 
-            variableReferences:
-              declarations.flatMap(
-                (d) =>
-                  d.variableReferences || [],
-              ),
+            variableReferences: declarations.flatMap(
+              (d) => d.variableReferences || [],
+            ),
           });
         }
 
@@ -2302,32 +2156,22 @@
         const nestedContext = {
           media: context.media || null,
 
-          supports:
-            context.supports || null,
+          supports: context.supports || null,
 
-          elements:
-            context.elements,
+          elements: context.elements,
         };
 
         if (ruleType === "media") {
           nestedContext.media =
-            rule.conditionText ||
-            rule.media?.mediaText ||
-            null;
+            rule.conditionText || rule.media?.mediaText || null;
         }
 
         if (ruleType === "supports") {
-          nestedContext.supports =
-            rule.conditionText || null;
+          nestedContext.supports = rule.conditionText || null;
         }
 
         try {
-          walkCSSRules(
-            rule.cssRules,
-            nestedContext,
-            stylesheetMeta,
-            output,
-          );
+          walkCSSRules(rule.cssRules, nestedContext, stylesheetMeta, output);
         } catch (error) {
           /*
            * Ignore inaccessible nested rules.
@@ -2350,9 +2194,7 @@
               {
                 ...stylesheetMeta,
 
-                href:
-                  rule.href ||
-                  stylesheetMeta.href,
+                href: rule.href || stylesheetMeta.href,
               },
               output,
             );
@@ -2371,11 +2213,7 @@
   ========================================================= */
 
   function detectFramework(href, cssText) {
-    const source = (
-      safeString(href) +
-      " " +
-      safeString(cssText)
-    ).toLowerCase();
+    const source = (safeString(href) + " " + safeString(cssText)).toLowerCase();
 
     if (source.includes("bootstrap")) {
       return "Bootstrap";
@@ -2397,10 +2235,7 @@
       return "Materialize";
     }
 
-    if (
-      source.includes("mobirise") ||
-      source.includes("mbr-")
-    ) {
+    if (source.includes("mobirise") || source.includes("mbr-")) {
       return "Mobirise";
     }
 
@@ -2410,13 +2245,8 @@
   function getPageStylesheets() {
     const stylesheets = [];
 
-    for (
-      let index = 0;
-      index < document.styleSheets.length;
-      index++
-    ) {
-      const sheet =
-        document.styleSheets[index];
+    for (let index = 0; index < document.styleSheets.length; index++) {
+      const sheet = document.styleSheets[index];
 
       let cssRules = null;
       let blocked = false;
@@ -2435,14 +2265,12 @@
         href = "";
       }
 
-      const framework =
-        detectFramework(href, "");
+      const framework = detectFramework(href, "");
 
       let title = "";
 
       try {
-        title =
-          sheet.ownerNode?.title || "";
+        title = sheet.ownerNode?.title || "";
       } catch (error) {
         title = "";
       }
@@ -2456,8 +2284,7 @@
 
         framework,
 
-        accessible:
-          !blocked && !!cssRules,
+        accessible: !blocked && !!cssRules,
 
         blocked,
 
@@ -2478,7 +2305,9 @@
 
   function getCustomPropertyDeclarationsFromRule(rule) {
     return safeArray(rule?.declarations).filter((declaration) =>
-      isCustomPropertyName(declaration?.originalProperty || declaration?.property),
+      isCustomPropertyName(
+        declaration?.originalProperty || declaration?.property,
+      ),
     );
   }
 
@@ -2486,7 +2315,12 @@
     const normalized = normalizeWhitespace(selector);
 
     if (normalized === ":root") return "root";
-    if (normalized === "html" || normalized === "html:root" || normalized === "body") return "global";
+    if (
+      normalized === "html" ||
+      normalized === "html:root" ||
+      normalized === "body"
+    )
+      return "global";
     return "selector";
   }
 
@@ -2494,12 +2328,19 @@
     const normalized = safeString(selector).trim();
     if (!normalized) return false;
 
-    if (normalized === ":root" || normalized === "html" || normalized === "html:root" || normalized === "body") {
+    if (
+      normalized === ":root" ||
+      normalized === "html" ||
+      normalized === "html:root" ||
+      normalized === "body"
+    ) {
       return true;
     }
 
     const scopeElements = [...safeArray(elements), ...safeArray(ancestors)];
-    return scopeElements.some((element) => selectorMatchesElement(normalized, element));
+    return scopeElements.some((element) =>
+      selectorMatchesElement(normalized, element),
+    );
   }
 
   /*
@@ -2534,10 +2375,7 @@
         const selectorText = safeString(rule.selectorText);
         if (!selectorText) continue;
 
-        const declarations = getStyleDeclarations(
-          rule.style,
-          rule.cssText,
-        );
+        const declarations = getStyleDeclarations(rule.style, rule.cssText);
 
         const customDeclarations = getCustomPropertyDeclarationsFromRule({
           declarations,
@@ -2551,11 +2389,13 @@
           .filter(Boolean);
 
         for (const selector of selectors) {
-          if (!selectorMatchesVariableScope(
-            selector,
-            context.elements,
-            context.ancestors,
-          )) {
+          if (
+            !selectorMatchesVariableScope(
+              selector,
+              context.elements,
+              context.ancestors,
+            )
+          ) {
             continue;
           }
 
@@ -2588,9 +2428,7 @@
               supports: context.supports || null,
               mediaActive: mediaMatches(context.media),
               supportsActive: supportsMatches(context.supports),
-              variableReferences: safeArray(
-                declaration.variableReferences,
-              ),
+              variableReferences: safeArray(declaration.variableReferences),
             });
           }
         }
@@ -2613,9 +2451,7 @@
 
         if (ruleType === "media") {
           nestedContext.media =
-            rule.conditionText ||
-            rule.media?.mediaText ||
-            null;
+            rule.conditionText || rule.media?.mediaText || null;
         }
 
         if (ruleType === "supports") {
@@ -2660,22 +2496,40 @@
     const definitions = [];
 
     for (const rule of safeArray(rules)) {
-      if (rule?.kind !== "css-rule" || !rule.mediaActive || !rule.supportsActive) continue;
+      if (
+        rule?.kind !== "css-rule" ||
+        !rule.mediaActive ||
+        !rule.supportsActive
+      )
+        continue;
 
       const customDeclarations = getCustomPropertyDeclarationsFromRule(rule);
       if (!customDeclarations.length) continue;
 
-      if (!selectorMatchesVariableScope(rule.originalSelector || rule.selector, elements, ancestors)) continue;
+      if (
+        !selectorMatchesVariableScope(
+          rule.originalSelector || rule.selector,
+          elements,
+          ancestors,
+        )
+      )
+        continue;
 
       for (const declaration of customDeclarations) {
-        const property = safeString(declaration.originalProperty || declaration.property).trim();
+        const property = safeString(
+          declaration.originalProperty || declaration.property,
+        ).trim();
         definitions.push({
           property,
-          value: normalizeWhitespace(declaration.originalValue || declaration.value),
+          value: normalizeWhitespace(
+            declaration.originalValue || declaration.value,
+          ),
           important: !!declaration.important,
           selector: safeString(rule.selector),
           originalSelector: safeString(rule.originalSelector),
-          scopeKind: getCustomPropertyScopeKind(rule.originalSelector || rule.selector),
+          scopeKind: getCustomPropertyScopeKind(
+            rule.originalSelector || rule.selector,
+          ),
           declarationIndex: declaration.declarationIndex ?? 0,
           specificity: rule.specificity,
           stylesheetIndex: rule.stylesheetIndex,
@@ -2702,15 +2556,22 @@
     for (const element of safeArray(elements)) {
       if (!element || !element.hasAttribute("style")) continue;
 
-      const declarations = getStyleDeclarations(element.style, element.getAttribute("style") || "");
+      const declarations = getStyleDeclarations(
+        element.style,
+        element.getAttribute("style") || "",
+      );
 
       for (const declaration of declarations) {
-        const property = safeString(declaration.originalProperty || declaration.property).trim();
+        const property = safeString(
+          declaration.originalProperty || declaration.property,
+        ).trim();
         if (!isCustomPropertyName(property)) continue;
 
         definitions.push({
           property,
-          value: normalizeWhitespace(declaration.originalValue || declaration.value),
+          value: normalizeWhitespace(
+            declaration.originalValue || declaration.value,
+          ),
           important: !!declaration.important,
           selector: "[style]",
           originalSelector: "[style]",
@@ -2743,9 +2604,15 @@
 
     for (const definition of safeArray(definitions)) {
       const key = [
-        definition.property, definition.value, definition.selector,
-        definition.stylesheetIndex, definition.ruleIndex, definition.declarationIndex,
-        definition.elementLabel || "", definition.media || "", definition.supports || "",
+        definition.property,
+        definition.value,
+        definition.selector,
+        definition.stylesheetIndex,
+        definition.ruleIndex,
+        definition.declarationIndex,
+        definition.elementLabel || "",
+        definition.media || "",
+        definition.supports || "",
       ].join("|");
       if (seen.has(key)) continue;
       seen.add(key);
@@ -2753,7 +2620,6 @@
     }
     return output;
   }
-
 
   /* =========================================================
      V2.2-A2 - CUSTOM PROPERTY CASCADE
@@ -2788,14 +2654,12 @@
         c: 0,
         value: 0,
       },
-      sourceOrder:
-        Number.isFinite(definition?.sourceOrder)
-          ? definition.sourceOrder
-          : -1,
-      declarationIndex:
-        Number.isFinite(definition?.declarationIndex)
-          ? definition.declarationIndex
-          : 0,
+      sourceOrder: Number.isFinite(definition?.sourceOrder)
+        ? definition.sourceOrder
+        : -1,
+      declarationIndex: Number.isFinite(definition?.declarationIndex)
+        ? definition.declarationIndex
+        : 0,
     };
   }
 
@@ -2822,11 +2686,10 @@
       return a.inline - b.inline;
     }
 
-    const specificityComparison =
-      compareSpecificityValues(
-        a.specificity,
-        b.specificity,
-      );
+    const specificityComparison = compareSpecificityValues(
+      a.specificity,
+      b.specificity,
+    );
 
     if (specificityComparison !== 0) {
       return specificityComparison;
@@ -2859,11 +2722,7 @@
     };
   }
 
-  function getCustomPropertyCascadeElements(
-    root,
-    elements,
-    ancestors,
-  ) {
+  function getCustomPropertyCascadeElements(root, elements, ancestors) {
     const output = [];
     const seen = new Set();
 
@@ -2893,13 +2752,9 @@
     return output;
   }
 
-  function selectorMatchesCustomPropertyCascadeTarget(
-    definition,
-    element,
-  ) {
+  function selectorMatchesCustomPropertyCascadeTarget(definition, element) {
     const selector = safeString(
-      definition?.selector ||
-        definition?.originalSelector,
+      definition?.selector || definition?.originalSelector,
     ).trim();
 
     if (!selector || !element) {
@@ -2912,37 +2767,19 @@
       return element === document.documentElement;
     }
 
-    if (
-      normalized === "html" ||
-      normalized === "html:root"
-    ) {
-      return (
-        element === document.documentElement
-      );
+    if (normalized === "html" || normalized === "html:root") {
+      return element === document.documentElement;
     }
 
     if (normalized === "body") {
       return element === document.body;
     }
 
-    return selectorMatchesElement(
-      normalized,
-      element,
-    );
+    return selectorMatchesElement(normalized, element);
   }
 
-  function buildCustomPropertyCascade(
-    definitions,
-    root,
-    elements,
-    ancestors,
-  ) {
-    const targets =
-      getCustomPropertyCascadeElements(
-        root,
-        elements,
-        ancestors,
-      );
+  function buildCustomPropertyCascade(definitions, root, elements, ancestors) {
+    const targets = getCustomPropertyCascadeElements(root, elements, ancestors);
 
     const candidates = [];
     const winners = [];
@@ -2950,23 +2787,17 @@
 
     for (let targetIndex = 0; targetIndex < targets.length; targetIndex++) {
       const element = targets[targetIndex];
-      const elementDefinitions =
-        safeArray(definitions).filter(
-          (definition) =>
-            definition.mediaActive !== false &&
-            definition.supportsActive !== false &&
-            selectorMatchesCustomPropertyCascadeTarget(
-              definition,
-              element,
-            ),
-        );
+      const elementDefinitions = safeArray(definitions).filter(
+        (definition) =>
+          definition.mediaActive !== false &&
+          definition.supportsActive !== false &&
+          selectorMatchesCustomPropertyCascadeTarget(definition, element),
+      );
 
       const byProperty = new Map();
 
       for (const definition of elementDefinitions) {
-        const property = safeString(
-          definition.property,
-        ).trim();
+        const property = safeString(definition.property).trim();
 
         if (!isCustomPropertyName(property)) {
           continue;
@@ -2976,35 +2807,22 @@
           byProperty.set(property, []);
         }
 
-        byProperty.get(property).push(
-          definition,
-        );
+        byProperty.get(property).push(definition);
       }
 
       for (const [property, propertyCandidates] of byProperty) {
-        const sorted =
-          propertyCandidates
-            .slice()
-            .sort(
-              (
-                left,
-                right,
-              ) =>
-                compareCustomPropertyCandidates(
-                  right,
-                  left,
-                ),
-            );
+        const sorted = propertyCandidates
+          .slice()
+          .sort((left, right) => compareCustomPropertyCandidates(right, left));
 
         if (!sorted.length) continue;
 
-        const winner =
-          cloneCustomPropertyDefinition(
-            sorted[0],
-            element,
-            "winning",
-            targetIndex,
-          );
+        const winner = cloneCustomPropertyDefinition(
+          sorted[0],
+          element,
+          "winning",
+          targetIndex,
+        );
 
         winners.push(winner);
 
@@ -3013,19 +2831,13 @@
             cloneCustomPropertyDefinition(
               candidate,
               element,
-              candidate === sorted[0]
-                ? "winning"
-                : "overridden",
+              candidate === sorted[0] ? "winning" : "overridden",
               targetIndex,
             ),
           ),
         );
 
-        for (
-          let index = 1;
-          index < sorted.length;
-          index++
-        ) {
+        for (let index = 1; index < sorted.length; index++) {
           overridden.push(
             cloneCustomPropertyDefinition(
               sorted[index],
@@ -3108,8 +2920,7 @@
       const style = element.style;
       if (!style) continue;
 
-      const attributeText =
-        element.getAttribute("style") || "";
+      const attributeText = element.getAttribute("style") || "";
       const cssText = safeString(style.cssText || "");
       const effectiveText = cssText || attributeText;
       const declarationCount = Number(style.length) || 0;
@@ -3180,7 +2991,7 @@
     const existing = new Set(
       safeArray(rules)
         .filter((rule) => rule && rule.kind === "inline")
-        .flatMap((rule) => safeArray(rule.matchedElements))
+        .flatMap((rule) => safeArray(rule.matchedElements)),
     );
 
     let added = 0;
@@ -3196,19 +3007,13 @@
 
       const style = element.style;
       inspected++;
-      const styleText =
-        style.cssText ||
-        element.getAttribute("style") ||
-        "";
+      const styleText = style.cssText || element.getAttribute("style") || "";
 
       /*
        * Always read CSSOM. This catches programmatic style mutations even
        * when the source-attribute snapshot is stale/empty.
        */
-      const declarations = getStyleDeclarations(
-        style,
-        styleText,
-      );
+      const declarations = getStyleDeclarations(style, styleText);
 
       if (!declarations.length) continue;
 
@@ -3284,10 +3089,7 @@
     return added + reconciled;
   }
 
-  function collectInlineStyles(
-    elements,
-    output,
-  ) {
+  function collectInlineStyles(elements, output) {
     for (const element of safeArray(elements)) {
       if (!element.hasAttribute("style")) {
         continue;
@@ -3295,11 +3097,10 @@
 
       const style = element.style;
 
-      const declarations =
-        getStyleDeclarations(
-          style,
-          element.getAttribute("style") || "",
-        );
+      const declarations = getStyleDeclarations(
+        style,
+        element.getAttribute("style") || "",
+      );
 
       if (!declarations.length) {
         continue;
@@ -3312,24 +3113,18 @@
 
         originalSelector: "[style]",
 
-        cssText:
-          element.getAttribute("style") ||
-          "",
+        cssText: element.getAttribute("style") || "",
 
         declarations,
 
         matchedElements: [element],
 
-        matchedElementLabels: [
-          getNodeLabel(element),
-        ],
+        matchedElementLabels: [getNodeLabel(element)],
 
         /*
          * V2.1.2
          */
-        matchedElementDetails: [
-          getElementMetadata(element),
-        ],
+        matchedElementDetails: [getElementMetadata(element)],
 
         specificity: {
           a: 1,
@@ -3345,16 +3140,13 @@
 
         stylesheetHref: "",
 
-        stylesheetTitle:
-          "Inline style",
+        stylesheetTitle: "Inline style",
 
-        stylesheetFramework:
-          "Inline",
+        stylesheetFramework: "Inline",
 
         ruleIndex: -1,
 
-        sourceOrder:
-          Number.MAX_SAFE_INTEGER,
+        sourceOrder: Number.MAX_SAFE_INTEGER,
 
         media: null,
 
@@ -3366,11 +3158,9 @@
 
         ruleType: "inline",
 
-        variableReferences:
-          declarations.flatMap(
-            (d) =>
-              d.variableReferences || [],
-          ),
+        variableReferences: declarations.flatMap(
+          (d) => d.variableReferences || [],
+        ),
       });
     }
   }
@@ -3393,91 +3183,57 @@
      */
 
     return {
-      important:
-        declaration.important ? 1 : 0,
+      important: declaration.important ? 1 : 0,
 
-      specificityValue:
-        declaration.specificity?.value || 0,
+      specificityValue: declaration.specificity?.value || 0,
 
-      sourceOrder:
-        declaration.sourceOrder ?? 0,
+      sourceOrder: declaration.sourceOrder ?? 0,
 
       /*
        * V2.1.2
        *
        * Declaration order is retained separately.
        */
-      declarationIndex:
-        declaration.declarationIndex ?? 0,
+      declarationIndex: declaration.declarationIndex ?? 0,
     };
   }
 
   function compareCascadePriority(a, b) {
-    const rankA =
-      getCascadeRank(a);
+    const rankA = getCascadeRank(a);
 
-    const rankB =
-      getCascadeRank(b);
+    const rankB = getCascadeRank(b);
 
-    if (
-      rankA.important !==
-      rankB.important
-    ) {
-      return (
-        rankA.important -
-        rankB.important
-      );
+    if (rankA.important !== rankB.important) {
+      return rankA.important - rankB.important;
     }
 
-    if (
-      rankA.specificityValue !==
-      rankB.specificityValue
-    ) {
-      return (
-        rankA.specificityValue -
-        rankB.specificityValue
-      );
+    if (rankA.specificityValue !== rankB.specificityValue) {
+      return rankA.specificityValue - rankB.specificityValue;
     }
 
-    if (
-      rankA.sourceOrder !==
-      rankB.sourceOrder
-    ) {
-      return (
-        rankA.sourceOrder -
-        rankB.sourceOrder
-      );
+    if (rankA.sourceOrder !== rankB.sourceOrder) {
+      return rankA.sourceOrder - rankB.sourceOrder;
     }
 
-    return (
-      rankA.declarationIndex -
-      rankB.declarationIndex
-    );
+    return rankA.declarationIndex - rankB.declarationIndex;
   }
 
   /* =========================================================
      DECLARATION RECORD CREATION
   ========================================================= */
 
-  function createDeclarationRecords(
-    rules,
-  ) {
+  function createDeclarationRecords(rules) {
     const declarations = [];
 
     for (const rule of safeArray(rules)) {
-      const ruleDeclarations =
-        safeArray(rule.declarations);
+      const ruleDeclarations = safeArray(rule.declarations);
 
       for (
         let declarationIndex = 0;
-        declarationIndex <
-        ruleDeclarations.length;
+        declarationIndex < ruleDeclarations.length;
         declarationIndex++
       ) {
-        const declaration =
-          ruleDeclarations[
-            declarationIndex
-          ];
+        const declaration = ruleDeclarations[declarationIndex];
 
         /*
          * V2.1.2
@@ -3491,36 +3247,25 @@
            * Existing V2.1 fields.
            */
 
-          property:
-            declaration.property,
+          property: declaration.property,
 
-          value:
-            declaration.value,
+          value: declaration.value,
 
-          important:
-            declaration.important,
+          important: declaration.important,
 
           /*
            * V2.1.2 declaration provenance.
            */
 
-          originalProperty:
-            declaration.originalProperty,
+          originalProperty: declaration.originalProperty,
 
-          originalValue:
-            declaration.originalValue,
+          originalValue: declaration.originalValue,
 
-          declarationType:
-            declaration.declarationType,
+          declarationType: declaration.declarationType,
 
-          declarationIndex:
-            declaration.declarationIndex ??
-            declarationIndex,
+          declarationIndex: declaration.declarationIndex ?? declarationIndex,
 
-          expandedProperties:
-            safeArray(
-              declaration.expandedProperties,
-            ),
+          expandedProperties: safeArray(declaration.expandedProperties),
 
           /*
            * Rule/source information.
@@ -3528,67 +3273,44 @@
 
           rule,
 
-          selector:
-            rule.selector,
+          selector: rule.selector,
 
-          originalSelector:
-            rule.originalSelector,
+          originalSelector: rule.originalSelector,
 
-          matchedElements:
-            rule.matchedElements,
+          matchedElements: rule.matchedElements,
 
-          matchedElementLabels:
-            safeArray(
-              rule.matchedElementLabels,
-            ),
+          matchedElementLabels: safeArray(rule.matchedElementLabels),
 
-          matchedElementDetails:
-            safeArray(
-              rule.matchedElementDetails,
-            ),
+          matchedElementDetails: safeArray(rule.matchedElementDetails),
 
-          specificity:
-            rule.specificity,
+          specificity: rule.specificity,
 
-          stylesheetIndex:
-            rule.stylesheetIndex,
+          stylesheetIndex: rule.stylesheetIndex,
 
-          stylesheetHref:
-            rule.stylesheetHref,
+          stylesheetHref: rule.stylesheetHref,
 
-          stylesheetTitle:
-            rule.stylesheetTitle,
+          stylesheetTitle: rule.stylesheetTitle,
 
-          stylesheetFramework:
-            rule.stylesheetFramework,
+          stylesheetFramework: rule.stylesheetFramework,
 
-          ruleIndex:
-            rule.ruleIndex,
+          ruleIndex: rule.ruleIndex,
 
-          sourceOrder:
-            rule.sourceOrder,
+          sourceOrder: rule.sourceOrder,
 
-          media:
-            rule.media,
+          media: rule.media,
 
-          supports:
-            rule.supports,
+          supports: rule.supports,
 
-          mediaActive:
-            rule.mediaActive,
+          mediaActive: rule.mediaActive,
 
-          supportsActive:
-            rule.supportsActive,
+          supportsActive: rule.supportsActive,
 
           /*
            * Variable references belong to the original
            * source declaration.
            */
 
-          variableReferences:
-            safeArray(
-              declaration.variableReferences,
-            ),
+          variableReferences: safeArray(declaration.variableReferences),
 
           status: "candidate",
 
@@ -3618,9 +3340,7 @@
      V2.1.2 - EXPANDED CASCADE RECORDS
   ========================================================= */
 
-  function createExpandedCascadeRecords(
-    declarations,
-  ) {
+  function createExpandedCascadeRecords(declarations) {
     /*
      * R3.5: shorthand declarations (including `font`) are expanded before
      * per-property cascade comparison. The expanded records retain the
@@ -3629,13 +3349,8 @@
      */
     const expanded = [];
 
-    for (const declaration of safeArray(
-      declarations,
-    )) {
-      const properties =
-        safeArray(
-          declaration.expandedProperties,
-        );
+    for (const declaration of safeArray(declarations)) {
+      const properties = safeArray(declaration.expandedProperties);
 
       if (!properties.length) {
         expanded.push(declaration);
@@ -3644,12 +3359,10 @@
 
       for (
         let expandedIndex = 0;
-        expandedIndex <
-        properties.length;
+        expandedIndex < properties.length;
         expandedIndex++
       ) {
-        const expandedProperty =
-          properties[expandedIndex];
+        const expandedProperty = properties[expandedIndex];
 
         if (!expandedProperty) {
           continue;
@@ -3662,24 +3375,19 @@
            * Cascade property.
            */
 
-          property:
-            expandedProperty.property,
+          property: expandedProperty.property,
 
-          value:
-            expandedProperty.value,
+          value: expandedProperty.value,
 
           /*
            * Source declaration remains intact.
            */
 
-          originalProperty:
-            declaration.originalProperty,
+          originalProperty: declaration.originalProperty,
 
-          originalValue:
-            declaration.originalValue,
+          originalValue: declaration.originalValue,
 
-          declarationType:
-            declaration.declarationType,
+          declarationType: declaration.declarationType,
 
           expandedIndex,
 
@@ -3692,8 +3400,7 @@
            * Preserve original declaration reference.
            */
 
-          sourceDeclaration:
-            declaration,
+          sourceDeclaration: declaration,
         });
       }
     }
@@ -3705,30 +3412,17 @@
      COMPUTED STYLE MAPPING
   ========================================================= */
 
-  function getComputedPropertyValue(
-    element,
-    property,
-  ) {
+  function getComputedPropertyValue(element, property) {
     try {
-      const computed =
-        window.getComputedStyle(
-          element,
-        );
+      const computed = window.getComputedStyle(element);
 
-      return normalizeWhitespace(
-        computed.getPropertyValue(
-          property,
-        ),
-      );
+      return normalizeWhitespace(computed.getPropertyValue(property));
     } catch (error) {
       return "";
     }
   }
 
-  function buildCascadeMap(
-    elements,
-    declarations,
-  ) {
+  function buildCascadeMap(elements, declarations) {
     /*
      * Map:
      *
@@ -3739,9 +3433,7 @@
 
     const map = new Map();
 
-    for (const element of safeArray(
-      elements,
-    )) {
+    for (const element of safeArray(elements)) {
       map.set(element, new Map());
     }
 
@@ -3752,46 +3444,27 @@
      * records while source provenance remains attached.
      */
 
-    const cascadeDeclarations =
-      createExpandedCascadeRecords(
-        declarations,
-      );
+    const cascadeDeclarations = createExpandedCascadeRecords(declarations);
 
     for (const declaration of cascadeDeclarations) {
-      if (
-        !declaration.mediaActive ||
-        !declaration.supportsActive
-      ) {
-        declaration.status =
-          "inactive";
+      if (!declaration.mediaActive || !declaration.supportsActive) {
+        declaration.status = "inactive";
 
         continue;
       }
 
-      for (const element of safeArray(
-        declaration.matchedElements,
-      )) {
+      for (const element of safeArray(declaration.matchedElements)) {
         if (!map.has(element)) {
           map.set(element, new Map());
         }
 
-        const propertyMap =
-          map.get(element);
+        const propertyMap = map.get(element);
 
-        if (
-          !propertyMap.has(
-            declaration.property,
-          )
-        ) {
-          propertyMap.set(
-            declaration.property,
-            [],
-          );
+        if (!propertyMap.has(declaration.property)) {
+          propertyMap.set(declaration.property, []);
         }
 
-        propertyMap
-          .get(declaration.property)
-          .push(declaration);
+        propertyMap.get(declaration.property).push(declaration);
       }
     }
 
@@ -3802,34 +3475,19 @@
     };
   }
 
-  function determineWinners(
-    elements,
-    declarations,
-  ) {
-    const cascadeData =
-      buildCascadeMap(
-        elements,
-        declarations,
-      );
+  function determineWinners(elements, declarations) {
+    const cascadeData = buildCascadeMap(elements, declarations);
 
-    const map =
-      cascadeData.map;
+    const map = cascadeData.map;
 
-    const cascadeDeclarations =
-      cascadeData.cascadeDeclarations;
+    const cascadeDeclarations = cascadeData.cascadeDeclarations;
 
     const winners = [];
 
     const overridden = [];
 
-    for (const [
-      element,
-      propertyMap,
-    ] of map.entries()) {
-      for (const [
-        property,
-        candidates,
-      ] of propertyMap.entries()) {
+    for (const [element, propertyMap] of map.entries()) {
+      for (const [property, candidates] of propertyMap.entries()) {
         if (!candidates.length) {
           continue;
         }
@@ -3838,146 +3496,96 @@
          * Sort weakest → strongest.
          */
 
-        candidates.sort(
-          compareCascadePriority,
-        );
+        candidates.sort(compareCascadePriority);
 
-        const winner =
-          candidates[
-            candidates.length - 1
-          ];
+        const winner = candidates[candidates.length - 1];
 
-        winner.status =
-          "winning";
+        winner.status = "winning";
 
-        winner.cascadeRank =
-          getCascadeRank(winner);
+        winner.cascadeRank = getCascadeRank(winner);
 
         winners.push({
           element,
 
-          elementLabel:
-            getNodeLabel(element),
+          elementLabel: getNodeLabel(element),
 
-          matchedElementLabels:
-            safeArray(
-              winner.matchedElementLabels,
-            ),
+          matchedElementLabels: safeArray(winner.matchedElementLabels),
 
-          matchedElementDetails:
-            safeArray(
-              winner.matchedElementDetails,
-            ),
+          matchedElementDetails: safeArray(winner.matchedElementDetails),
 
           property,
 
-          value:
-            winner.value,
+          value: winner.value,
 
-          important:
-            winner.important,
+          important: winner.important,
 
           /*
            * V2.1.2 source provenance.
            */
 
-          originalProperty:
-            winner.originalProperty,
+          originalProperty: winner.originalProperty,
 
-          originalValue:
-            winner.originalValue,
+          originalValue: winner.originalValue,
 
-          declarationType:
-            winner.declarationType,
+          declarationType: winner.declarationType,
 
-          declarationIndex:
-            winner.declarationIndex,
+          declarationIndex: winner.declarationIndex,
 
-          expandedIndex:
-            winner.expandedIndex ?? 0,
+          expandedIndex: winner.expandedIndex ?? 0,
 
-          expandedFrom:
-            winner.expandedFrom ?? null,
+          expandedFrom: winner.expandedFrom ?? null,
 
-          expandedProperties:
-            safeArray(
-              winner.expandedProperties,
-            ),
+          expandedProperties: safeArray(winner.expandedProperties),
 
-          selector:
-            winner.selector,
+          selector: winner.selector,
 
-          originalSelector:
-            winner.originalSelector,
+          originalSelector: winner.originalSelector,
 
-          cssText:
-            winner.rule?.cssText || "",
+          cssText: winner.rule?.cssText || "",
 
-          stylesheetIndex:
-            winner.stylesheetIndex,
+          stylesheetIndex: winner.stylesheetIndex,
 
-          stylesheetHref:
-            winner.stylesheetHref,
+          stylesheetHref: winner.stylesheetHref,
 
-          stylesheetTitle:
-            winner.stylesheetTitle,
+          stylesheetTitle: winner.stylesheetTitle,
 
-          stylesheetFramework:
-            winner.stylesheetFramework,
+          stylesheetFramework: winner.stylesheetFramework,
 
-          ruleIndex:
-            winner.ruleIndex,
+          ruleIndex: winner.ruleIndex,
 
-          sourceOrder:
-            winner.sourceOrder,
+          sourceOrder: winner.sourceOrder,
 
-          specificity:
-            winner.specificity,
+          specificity: winner.specificity,
 
-          media:
-            winner.media,
+          media: winner.media,
 
-          supports:
-            winner.supports,
+          supports: winner.supports,
 
-          variableReferences:
-            (() => {
-              const stored = safeArray(
-                winner.variableReferences,
-              );
-              if (stored.length) return stored;
-              return extractVariableReferences(
-                winner.originalValue || winner.value || "",
-              );
-            })(),
+          variableReferences: (() => {
+            const stored = safeArray(winner.variableReferences);
+            if (stored.length) return stored;
+            return extractVariableReferences(
+              winner.originalValue || winner.value || "",
+            );
+          })(),
 
-          declaration:
-            winner,
+          declaration: winner,
         });
 
         /*
          * All weaker candidates are overridden.
          */
 
-        for (
-          let i = 0;
-          i < candidates.length - 1;
-          i++
-        ) {
-          const overriddenDeclaration =
-            candidates[i];
+        for (let i = 0; i < candidates.length - 1; i++) {
+          const overriddenDeclaration = candidates[i];
 
-          overriddenDeclaration.status =
-            "overridden";
+          overriddenDeclaration.status = "overridden";
 
-          overriddenDeclaration.cascadeRank =
-            getCascadeRank(
-              overriddenDeclaration,
-            );
-
-          overridden.push(
+          overriddenDeclaration.cascadeRank = getCascadeRank(
             overriddenDeclaration,
           );
+
+          overridden.push(overriddenDeclaration);
         }
       }
     }
@@ -4022,48 +3630,30 @@
     important,
     actualComputedValue,
   ) {
-    if (
-      !element ||
-      !property ||
-      !actualComputedValue
-    ) {
+    if (!element || !property || !actualComputedValue) {
       return false;
     }
 
     const style = element.style;
 
     try {
-      const hadInlineDeclaration =
-        style.getPropertyValue(property) !== "";
+      const hadInlineDeclaration = style.getPropertyValue(property) !== "";
 
-      const previousValue =
-        style.getPropertyValue(property);
+      const previousValue = style.getPropertyValue(property);
 
-      const previousPriority =
-        style.getPropertyPriority(property);
+      const previousPriority = style.getPropertyPriority(property);
 
-      style.setProperty(
+      style.setProperty(property, value, important ? "important" : "");
+
+      const normalizedAppliedValue = getComputedPropertyValue(
+        element,
         property,
-        value,
-        important ? "important" : "",
       );
 
-      const normalizedAppliedValue =
-        getComputedPropertyValue(
-          element,
-          property,
-        );
-
-      const matches =
-        normalizedAppliedValue ===
-        actualComputedValue;
+      const matches = normalizedAppliedValue === actualComputedValue;
 
       if (hadInlineDeclaration) {
-        style.setProperty(
-          property,
-          previousValue,
-          previousPriority,
-        );
+        style.setProperty(property, previousValue, previousPriority);
       } else {
         style.removeProperty(property);
       }
@@ -4074,9 +3664,7 @@
        * Always restore the inline declaration if possible.
        */
       try {
-        if (
-          style.getPropertyValue(property) !== ""
-        ) {
+        if (style.getPropertyValue(property) !== "") {
           style.removeProperty(property);
         }
       } catch (restoreError) {
@@ -4087,35 +3675,23 @@
     }
   }
 
-  function validateWinningDeclarations(
-    winners,
-  ) {
-    for (const winner of safeArray(
-      winners,
-    )) {
-      const element =
-        winner.element;
+  function validateWinningDeclarations(winners) {
+    for (const winner of safeArray(winners)) {
+      const element = winner.element;
 
       if (!element) {
         continue;
       }
 
-      const computedValue =
-        getComputedPropertyValue(
-          element,
-          winner.property,
-        );
+      const computedValue = getComputedPropertyValue(element, winner.property);
 
-      winner.computedValue =
-        computedValue;
+      winner.computedValue = computedValue;
 
       /*
        * First try exact comparison.
        */
       winner.matchesComputed =
-        normalizeWhitespace(
-          winner.value,
-        ) === computedValue;
+        normalizeWhitespace(winner.value) === computedValue;
 
       /*
        * R1 semantic browser comparison.
@@ -4124,43 +3700,30 @@
        * serialization differences while keeping the actual
        * element's context.
        */
-      if (
-        !winner.matchesComputed &&
-        computedValue
-      ) {
-        winner.matchesComputed =
-          semanticallyMatchesComputed(
-            element,
-            winner.property,
-            winner.value,
-            winner.important,
-            computedValue,
-          );
+      if (!winner.matchesComputed && computedValue) {
+        winner.matchesComputed = semanticallyMatchesComputed(
+          element,
+          winner.property,
+          winner.value,
+          winner.important,
+          computedValue,
+        );
       }
 
-      winner.variableReferences =
-        safeArray(
-          winner.variableReferences,
-        );
+      winner.variableReferences = safeArray(winner.variableReferences);
 
-      winner.variableDependent =
-        winner.variableReferences
-          .length > 0;
+      winner.variableDependent = winner.variableReferences.length > 0;
 
       /*
        * var(...) resolves to the computed value,
        * so source value and computed value are
        * expected to differ.
        */
-      if (
-        winner.variableDependent &&
-        computedValue
-      ) {
+      if (winner.variableDependent && computedValue) {
         winner.matchesComputed = true;
       }
     }
   }
-
 
   /* =========================================================
      V2.2-A3 - VAR() RESOLUTION
@@ -4267,9 +3830,7 @@
         references.push({
           property,
           fallback:
-            fallbackPart === null
-              ? null
-              : safeString(fallbackPart).trim(),
+            fallbackPart === null ? null : safeString(fallbackPart).trim(),
           raw: input.slice(index + match.index, closeIndex + 1),
         });
       }
@@ -4291,10 +3852,7 @@
         lookup.set(targetIndex, new Map());
       }
 
-      lookup.get(targetIndex).set(
-        winner.property,
-        winner,
-      );
+      lookup.get(targetIndex).set(winner.property, winner);
     }
 
     return lookup;
@@ -4315,10 +3873,7 @@
     let distance = 0;
 
     while (current && current.nodeType === 1) {
-      const targetIndex = findTargetIndexForElement(
-        targets,
-        current,
-      );
+      const targetIndex = findTargetIndexForElement(targets, current);
 
       if (targetIndex >= 0) {
         const propertyMap = winnerLookup.get(targetIndex);
@@ -4341,14 +3896,9 @@
     return null;
   }
 
-  function resolveVarReferencesForWinner(
-    winner,
-    customPropertyCascade,
-  ) {
+  function resolveVarReferencesForWinner(winner, customPropertyCascade) {
     const targets = safeArray(customPropertyCascade?.targets);
-    const winnerLookup = buildCustomPropertyWinnerLookup(
-      customPropertyCascade,
-    );
+    const winnerLookup = buildCustomPropertyWinnerLookup(customPropertyCascade);
 
     const resolution = resolveValueWithVariables(
       winner?.originalValue || winner?.value || "",
@@ -4542,9 +4092,7 @@
                   : "fallback-nested-pending",
               fallbackUsed: nested.status === "resolved",
               resolvedValue:
-                nested.status === "resolved"
-                  ? nested.resolvedValue
-                  : null,
+                nested.status === "resolved" ? nested.resolvedValue : null,
               sourceTargetIndex: null,
               sourceTargetElement: null,
               inherited: false,
@@ -4553,9 +4101,7 @@
               nested: nested.references,
             },
             resolvedValue:
-              nested.status === "resolved"
-                ? nested.resolvedValue
-                : null,
+              nested.status === "resolved" ? nested.resolvedValue : null,
             nestedReferenceCount:
               fallbackReferences.length + nested.nestedReferenceCount,
             nestedResolvedCount:
@@ -4621,8 +4167,7 @@
           fallbackUsed: false,
           resolvedValue: null,
           sourceTargetIndex: source.targetIndex,
-          sourceTargetElement:
-            source.winner.targetElementNode || null,
+          sourceTargetElement: source.winner.targetElementNode || null,
           inherited: source.inherited,
           inheritanceDistance: source.distance,
           definition: source.winner,
@@ -4647,8 +4192,7 @@
           fallbackUsed: false,
           resolvedValue: null,
           sourceTargetIndex: source.targetIndex,
-          sourceTargetElement:
-            source.winner.targetElementNode || null,
+          sourceTargetElement: source.winner.targetElementNode || null,
           inherited: source.inherited,
           inheritanceDistance: source.distance,
           definition: source.winner,
@@ -4699,10 +4243,9 @@
       reference: {
         ...reference,
         status: isResolved ? "resolved" : nested.status,
-        resolutionKind:
-          nestedReferences.length
-            ? "custom-property-nested"
-            : "custom-property",
+        resolutionKind: nestedReferences.length
+          ? "custom-property-nested"
+          : "custom-property",
         fallbackUsed: false,
         resolvedValue: isResolved ? nested.resolvedValue : null,
         sourceTargetIndex: source.targetIndex,
@@ -4716,18 +4259,14 @@
       resolvedValue: isResolved ? nested.resolvedValue : null,
       nestedReferenceCount:
         nestedReferences.length + nested.nestedReferenceCount,
-      nestedResolvedCount:
-        nested.resolvedCount + nested.nestedResolvedCount,
+      nestedResolvedCount: nested.resolvedCount + nested.nestedResolvedCount,
       nestedUnresolvedCount:
         nested.unresolvedCount + nested.nestedUnresolvedCount,
       circularCount: nested.circularCount,
     };
   }
 
-  function analyzeVarResolutions(
-    renderingDependencies,
-    customPropertyCascade,
-  ) {
+  function analyzeVarResolutions(renderingDependencies, customPropertyCascade) {
     /* V2.2-A5.1: recursively resolve custom-property values, including
      * nested var() references and nested fallbacks. */
     const declarations = [];
@@ -4741,10 +4280,7 @@
     let circularCount = 0;
 
     for (const dependency of safeArray(renderingDependencies)) {
-      const sourceValue =
-        dependency.originalValue ||
-        dependency.value ||
-        "";
+      const sourceValue = dependency.originalValue || dependency.value || "";
 
       const parsedReferences = parseVarFunctions(sourceValue);
 
@@ -4874,8 +4410,10 @@
         inherited: !!reference.inherited,
       });
 
-      if (reference.resolutionKind === "circular" ||
-          (Array.isArray(reference.cyclePath) && reference.cyclePath.length)) {
+      if (
+        reference.resolutionKind === "circular" ||
+        (Array.isArray(reference.cyclePath) && reference.cyclePath.length)
+      ) {
         const cyclePath = Array.isArray(reference.cyclePath)
           ? reference.cyclePath.map((item) => safeString(item))
           : currentPath;
@@ -4903,7 +4441,10 @@
         return false;
       }
 
-      if (reference.status === "unresolved" && !containsCircularReference(reference)) {
+      if (
+        reference.status === "unresolved" &&
+        !containsCircularReference(reference)
+      ) {
         unresolvedReferences.push({
           declarationId: context.declarationId,
           property,
@@ -4913,12 +4454,7 @@
 
       const nested = safeArray(reference.nested);
       for (const child of nested) {
-        walkReference(
-          child,
-          variableId,
-          context,
-          currentPath,
-        );
+        walkReference(child, variableId, context, currentPath);
       }
     }
 
@@ -4937,9 +4473,14 @@
       roots.push(declarationId);
 
       for (const reference of safeArray(declaration.references)) {
-        walkReference(reference, declarationId, {
+        walkReference(
+          reference,
           declarationId,
-        }, []);
+          {
+            declarationId,
+          },
+          [],
+        );
       }
     }
 
@@ -5015,9 +4556,10 @@
       if (!values.length) return [];
 
       // Remove a duplicated closing node before normalization.
-      const body = values.length > 1 && values[0] === values[values.length - 1]
-        ? values.slice(0, -1)
-        : values.slice();
+      const body =
+        values.length > 1 && values[0] === values[values.length - 1]
+          ? values.slice(0, -1)
+          : values.slice();
       if (body.length <= 1) return body;
 
       const rotations = [];
@@ -5070,29 +4612,13 @@
      DEPENDENCY CLASSIFICATION
   ========================================================= */
 
-  function classifyDependency(
-    winner,
-    root,
-  ) {
-    const selector =
-      safeString(
-        winner.selector,
-      );
+  function classifyDependency(winner, root) {
+    const selector = safeString(winner.selector);
 
-    if (
-      winner.stylesheetFramework !==
-      "Unknown"
-    ) {
+    if (winner.stylesheetFramework !== "Unknown") {
       if (
-        selector.includes(
-          root.tagName.toLowerCase(),
-        ) ||
-        (
-          root.id &&
-          selector.includes(
-            `#${root.id}`,
-          )
-        )
+        selector.includes(root.tagName.toLowerCase()) ||
+        (root.id && selector.includes(`#${root.id}`))
       ) {
         return "component-rendering";
       }
@@ -5101,149 +4627,161 @@
     }
 
     if (
-      (
-        root.id &&
-        selector.includes(
-          `#${root.id}`,
-        )
-      ) ||
-      selector.includes(
-        root.tagName.toLowerCase(),
-      )
+      (root.id && selector.includes(`#${root.id}`)) ||
+      selector.includes(root.tagName.toLowerCase())
     ) {
       return "component-rendering";
     }
 
-    if (
-      selector === "*" ||
-      selector === "html" ||
-      selector === "body"
-    ) {
+    if (selector === "*" || selector === "html" || selector === "body") {
       return "global-rendering";
     }
 
     return "generic-rendering";
   }
 
-  function buildRenderingDependencies(
-    winners,
-    root,
-  ) {
-    return safeArray(winners).map(
-      (winner) => {
-        const matchedElementLabels =
-          safeArray(
-            winner.matchedElementLabels,
-          );
+  /* =========================================================
+   V2.3.1-R1 - RESPONSIVE DEPENDENCY MODEL
+========================================================= */
 
-        const dependencyType =
-          classifyDependency(
-            winner,
-            root,
-          );
+  function getResponsiveMetadata(dependency) {
+    const hasMedia = !!dependency.media;
 
-        return {
-          ...winner,
+    const hasSupports = !!dependency.supports;
 
-          elementLabel:
-            safeString(
-              winner.elementLabel,
-            ),
+    /*
+     * Normal/non-conditional dependency.
+     */
+    if (!hasMedia && !hasSupports) {
+      return {
+        responsive: false,
 
-          matchedElementLabels,
+        responsiveType: null,
 
-          matchedElementDetails:
-            safeArray(
-              winner.matchedElementDetails,
-            ),
+        responsiveCondition: null,
 
-          cssText:
-            safeString(
-              winner.cssText ||
-                winner.declaration?.rule
-                  ?.cssText,
-            ),
+        responsiveActive: true,
+      };
+    }
 
-          selector:
-            safeString(
-              winner.selector,
-            ),
+    /*
+     * Both @media and @supports conditions.
+     */
+    if (hasMedia && hasSupports) {
+      return {
+        responsive: true,
 
-          originalSelector:
-            safeString(
-              winner.originalSelector,
-            ),
+        responsiveType: "media+supports",
 
-          stylesheetHref:
-            safeString(
-              winner.stylesheetHref,
-            ),
+        responsiveCondition: {
+          media: dependency.media,
 
-          stylesheetTitle:
-            safeString(
-              winner.stylesheetTitle,
-            ),
+          supports: dependency.supports,
+        },
 
-          stylesheetFramework:
-            safeString(
-              winner.stylesheetFramework,
-            ),
+        responsiveActive:
+          dependency.mediaActive === true && dependency.supportsActive === true,
+      };
+    }
 
-          /*
-           * V2.1.2 provenance.
-           */
+    /*
+     * @media only.
+     */
+    if (hasMedia) {
+      return {
+        responsive: true,
 
-          originalProperty:
-            safeString(
-              winner.originalProperty,
-            ),
+        responsiveType: "media",
 
-          originalValue:
-            safeString(
-              winner.originalValue,
-            ),
+        responsiveCondition: dependency.media,
 
-          declarationType:
-            safeString(
-              winner.declarationType,
-            ),
+        responsiveActive: dependency.mediaActive === true,
+      };
+    }
 
-          expandedProperties:
-            safeArray(
-              winner.expandedProperties,
-            ),
+    /*
+     * @supports only.
+     */
+    return {
+      responsive: true,
 
-          expandedFrom:
-            safeString(
-              winner.expandedFrom,
-            ),
+      responsiveType: "supports",
 
-          declarationIndex:
-            winner.declarationIndex ?? 0,
+      responsiveCondition: dependency.supports,
 
-          variableReferences:
-            safeArray(
-              winner.variableReferences,
-            ),
+      responsiveActive: dependency.supportsActive === true,
+    };
+  }
 
-          dependencyType,
+  function buildRenderingDependencies(winners, root) {
+    return safeArray(winners).map((winner) => {
+      const matchedElementLabels = safeArray(winner.matchedElementLabels);
 
-          renderRelevant:
-            winner.matchesComputed === true ||
-            winner.variableDependent ===
-              true,
-        };
-      },
-    );
+      const dependencyType = classifyDependency(winner, root);
+
+      const responsiveMetadata = getResponsiveMetadata(winner);
+
+      return {
+        ...winner,
+
+        elementLabel: safeString(winner.elementLabel),
+
+        matchedElementLabels,
+
+        matchedElementDetails: safeArray(winner.matchedElementDetails),
+
+        cssText: safeString(
+          winner.cssText || winner.declaration?.rule?.cssText,
+        ),
+
+        selector: safeString(winner.selector),
+
+        originalSelector: safeString(winner.originalSelector),
+
+        stylesheetHref: safeString(winner.stylesheetHref),
+
+        stylesheetTitle: safeString(winner.stylesheetTitle),
+
+        stylesheetFramework: safeString(winner.stylesheetFramework),
+
+        /*
+         * V2.1.2 provenance.
+         */
+
+        originalProperty: safeString(winner.originalProperty),
+
+        originalValue: safeString(winner.originalValue),
+
+        declarationType: safeString(winner.declarationType),
+
+        expandedProperties: safeArray(winner.expandedProperties),
+
+        expandedFrom: safeString(winner.expandedFrom),
+
+        declarationIndex: winner.declarationIndex ?? 0,
+
+        variableReferences: safeArray(winner.variableReferences),
+
+        /*
+         * V2.3.1-R1
+         *
+         * Responsive rendering metadata.
+         */
+        ...responsiveMetadata,
+
+        dependencyType,
+
+        renderRelevant:
+          winner.matchesComputed === true || winner.variableDependent === true,
+      };
+    });
   }
 
   /* =========================================================
      DEDUPLICATION
   ========================================================= */
 
-  function dependencyDedupKey(
-    dep,
-  ) {
+  function dependencyDedupKey(dep) {
     /*
      * V2.1.2
      *
@@ -5275,70 +4813,41 @@
     ].join("|");
   }
 
-  function deduplicateDependencies(
-    dependencies,
-  ) {
+  function deduplicateDependencies(dependencies) {
     const seen = new Map();
 
-    for (const dependency of safeArray(
-      dependencies,
-    )) {
-      if (
-        !dependency ||
-        typeof dependency !==
-          "object"
-      ) {
+    for (const dependency of safeArray(dependencies)) {
+      if (!dependency || typeof dependency !== "object") {
         continue;
       }
 
-      const labels =
-        safeArray(
-          dependency.matchedElementLabels,
-        );
+      const labels = safeArray(dependency.matchedElementLabels);
 
-      const key =
-        dependencyDedupKey(
-          dependency,
-        );
+      const key = dependencyDedupKey(dependency);
 
       if (!seen.has(key)) {
         seen.set(key, {
           ...dependency,
 
-          matchedElementLabels: [
-            ...labels,
-          ],
+          matchedElementLabels: [...labels],
 
           matchedElementDetails: [
-            ...safeArray(
-              dependency.matchedElementDetails,
-            ),
+            ...safeArray(dependency.matchedElementDetails),
           ],
 
-          variableReferences:
-            safeArray(
-              dependency.variableReferences,
-            ),
+          variableReferences: safeArray(dependency.variableReferences),
         });
 
         continue;
       }
 
-      const existing =
-        seen.get(key);
+      const existing = seen.get(key);
 
-      const existingLabels =
-        safeArray(
-          existing.matchedElementLabels,
-        );
+      const existingLabels = safeArray(existing.matchedElementLabels);
 
-      existing.matchedElementLabels =
-        Array.from(
-          new Set([
-            ...existingLabels,
-            ...labels,
-          ]),
-        );
+      existing.matchedElementLabels = Array.from(
+        new Set([...existingLabels, ...labels]),
+      );
 
       /*
        * V2.1.2
@@ -5346,82 +4855,48 @@
        * Merge structured element metadata.
        */
 
-      const existingDetails =
-        safeArray(
-          existing.matchedElementDetails,
-        );
+      const existingDetails = safeArray(existing.matchedElementDetails);
 
-      const incomingDetails =
-        safeArray(
-          dependency.matchedElementDetails,
-        );
+      const incomingDetails = safeArray(dependency.matchedElementDetails);
 
-      const detailMap =
-        new Map();
+      const detailMap = new Map();
 
-      for (const detail of [
-        ...existingDetails,
-        ...incomingDetails,
-      ]) {
+      for (const detail of [...existingDetails, ...incomingDetails]) {
         if (!detail) {
           continue;
         }
 
-        const key =
-          detail.label ||
-          `${detail.tagName}|${detail.id}`;
+        const key = detail.label || `${detail.tagName}|${detail.id}`;
 
-        detailMap.set(
-          key,
-          detail,
-        );
+        detailMap.set(key, detail);
       }
 
-      existing.matchedElementDetails =
-        Array.from(
-          detailMap.values(),
-        );
+      existing.matchedElementDetails = Array.from(detailMap.values());
 
       /*
        * Preserve variable references.
        */
 
-      const existingVariables =
-        safeArray(
-          existing.variableReferences,
-        );
+      const existingVariables = safeArray(existing.variableReferences);
 
-      const incomingVariables =
-        safeArray(
-          dependency.variableReferences,
-        );
+      const incomingVariables = safeArray(dependency.variableReferences);
 
-      existing.variableReferences =
-        Array.from(
-          new Set([
-            ...existingVariables,
-            ...incomingVariables,
-          ]),
-        );
+      existing.variableReferences = Array.from(
+        new Set([...existingVariables, ...incomingVariables]),
+      );
     }
 
-    return Array.from(
-      seen.values(),
-    );
+    return Array.from(seen.values());
   }
 
   /* =========================================================
      RULE-LEVEL GROUPING
   ========================================================= */
 
-  function groupDependenciesByRule(
-    dependencies,
-  ) {
+  function groupDependenciesByRule(dependencies) {
     const groups = new Map();
 
-    for (const dependency of safeArray(
-      dependencies,
-    )) {
+    for (const dependency of safeArray(dependencies)) {
       const key = [
         dependency.selector,
 
@@ -5436,35 +4911,37 @@
 
       if (!groups.has(key)) {
         groups.set(key, {
-          selector:
-            dependency.selector,
+          selector: dependency.selector,
 
-          originalSelector:
-            dependency.originalSelector,
+          originalSelector: dependency.originalSelector,
 
-          cssText:
-            dependency.declaration?.rule
-              ?.cssText || "",
+          cssText: dependency.declaration?.rule?.cssText || "",
 
           source:
-            dependency.stylesheetHref ||
-            dependency.stylesheetTitle ||
-            "Inline",
+            dependency.stylesheetHref || dependency.stylesheetTitle || "Inline",
 
-          framework:
-            dependency.stylesheetFramework,
+          framework: dependency.stylesheetFramework,
 
-          stylesheetIndex:
-            dependency.stylesheetIndex,
+          stylesheetIndex: dependency.stylesheetIndex,
 
-          ruleIndex:
-            dependency.ruleIndex,
+          ruleIndex: dependency.ruleIndex,
 
-          media:
-            dependency.media,
+          media: dependency.media,
 
-          supports:
-            dependency.supports,
+          supports: dependency.supports,
+          /*
+           * V2.3.1-R1
+           *
+           * Responsive rule metadata.
+           */
+
+          responsive: dependency.responsive === true,
+
+          responsiveType: dependency.responsiveType,
+
+          responsiveCondition: dependency.responsiveCondition,
+
+          responsiveActive: dependency.responsiveActive,
 
           matchedElements: [],
 
@@ -5474,163 +4951,99 @@
         });
       }
 
-      const group =
-        groups.get(key);
+      const group = groups.get(key);
 
-      const dependencyLabels =
-        safeArray(
-          dependency.matchedElementLabels,
-        );
+      const dependencyLabels = safeArray(dependency.matchedElementLabels);
 
-      group.matchedElements =
-        Array.from(
-          new Set([
-            ...safeArray(
-              group.matchedElements,
-            ),
-            ...dependencyLabels,
-          ]),
-        );
+      group.matchedElements = Array.from(
+        new Set([...safeArray(group.matchedElements), ...dependencyLabels]),
+      );
 
       /*
        * V2.1.2 structured metadata.
        */
 
-      const existingDetails =
-        safeArray(
-          group.matchedElementDetails,
-        );
+      const existingDetails = safeArray(group.matchedElementDetails);
 
-      const incomingDetails =
-        safeArray(
-          dependency.matchedElementDetails,
-        );
+      const incomingDetails = safeArray(dependency.matchedElementDetails);
 
-      const detailMap =
-        new Map();
+      const detailMap = new Map();
 
-      for (const detail of [
-        ...existingDetails,
-        ...incomingDetails,
-      ]) {
+      for (const detail of [...existingDetails, ...incomingDetails]) {
         if (!detail) {
           continue;
         }
 
-        detailMap.set(
-          detail.label ||
-            `${detail.tagName}|${detail.id}`,
-          detail,
-        );
+        detailMap.set(detail.label || `${detail.tagName}|${detail.id}`, detail);
       }
 
-      group.matchedElementDetails =
-        Array.from(
-          detailMap.values(),
-        );
+      group.matchedElementDetails = Array.from(detailMap.values());
 
       group.declarations.push({
         /*
          * Cascade property.
          */
 
-        property:
-          dependency.property,
+        property: dependency.property,
 
-        value:
-          dependency.value,
+        value: dependency.value,
 
         /*
          * V2.1.2 source declaration.
          */
 
-        originalProperty:
-          dependency.originalProperty,
+        originalProperty: dependency.originalProperty,
 
-        originalValue:
-          dependency.originalValue,
+        originalValue: dependency.originalValue,
 
-        declarationType:
-          dependency.declarationType,
+        declarationType: dependency.declarationType,
 
-        declarationIndex:
-          dependency.declarationIndex,
+        declarationIndex: dependency.declarationIndex,
 
-        expandedIndex:
-          dependency.expandedIndex ?? 0,
+        expandedIndex: dependency.expandedIndex ?? 0,
 
-        expandedFrom:
-          dependency.expandedFrom,
+        expandedFrom: dependency.expandedFrom,
 
-        expandedProperties:
-          safeArray(
-            dependency.expandedProperties,
-          ),
+        expandedProperties: safeArray(dependency.expandedProperties),
 
-        important:
-          dependency.important,
+        important: dependency.important,
 
-        status:
-          dependency.status,
+        status: dependency.status,
 
-        specificity:
-          dependency.specificity,
+        specificity: dependency.specificity,
 
-        computedValue:
-          dependency.computedValue,
+        computedValue: dependency.computedValue,
 
-        matchesComputed:
-          dependency.matchesComputed,
+        matchesComputed: dependency.matchesComputed,
 
-        variableReferences:
-          dependency.variableReferences,
+        variableReferences: dependency.variableReferences,
       });
     }
 
-    return Array.from(
-      groups.values(),
-    );
+    return Array.from(groups.values());
   }
 
   /* =========================================================
      MAIN ANALYZER
   ========================================================= */
 
-  function analyzeRenderingDependencies(
-    root,
-  ) {
-    if (
-      !root ||
-      root.nodeType !== 1
-    ) {
-      throw new Error(
-        "WCX CSS Analyzer requires a DOM element.",
-      );
+  function analyzeRenderingDependencies(root) {
+    if (!root || root.nodeType !== 1) {
+      throw new Error("WCX CSS Analyzer requires a DOM element.");
     }
 
-    const elements =
-      getAllComponentElements(
-        root,
-      );
+    const elements = getAllComponentElements(root);
 
-    const ancestors =
-      getAncestorElements(
-        root,
-      );
+    const ancestors = getAncestorElements(root);
 
     /*
      * V2.2.0-A3.4: inspect the LIVE DOM/CSSOM inline-style state
      * before source/cascade processing. This is diagnostic only; it
      * does not synthesize declarations or alter cascade priority.
      */
-    const inlineDiagnostics =
-      inspectLiveInlineStyles(
-        elements,
-        root,
-      );
+    const inlineDiagnostics = inspectLiveInlineStyles(elements, root);
 
-    const stylesheets =
-      getPageStylesheets();
+    const stylesheets = getPageStylesheets();
 
     const rules = [];
 
@@ -5643,10 +5056,7 @@
      */
 
     for (const stylesheet of stylesheets) {
-      if (
-        !stylesheet.accessible ||
-        !stylesheet.cssRules
-      ) {
+      if (!stylesheet.accessible || !stylesheet.cssRules) {
         blockedStylesheets++;
 
         continue;
@@ -5683,10 +5093,7 @@
      * Inline styles.
      */
 
-    collectInlineStyles(
-      elements,
-      rules,
-    );
+    collectInlineStyles(elements, rules);
 
     /*
      * V2.2.0-A3.2: reconcile the LIVE inline style attributes with
@@ -5694,12 +5101,11 @@
      * are created. This is intentionally additive and does not alter
      * the existing stylesheet rule collection.
      */
-    const liveInlineRuleCount =
-      ensureLiveInlineStylesInRules(
-        elements,
-        rules,
-        inlineDiagnostics,
-      );
+    const liveInlineRuleCount = ensureLiveInlineStylesInRules(
+      elements,
+      rules,
+      inlineDiagnostics,
+    );
 
     /*
      * V2.2-A1: discovery only. Variable cascade and var()
@@ -5715,10 +5121,7 @@
     const customPropertySourceDefinitions = [];
 
     for (const stylesheet of stylesheets) {
-      if (
-        !stylesheet.accessible ||
-        !stylesheet.cssRules
-      ) {
+      if (!stylesheet.accessible || !stylesheet.cssRules) {
         continue;
       }
 
@@ -5743,11 +5146,10 @@
       }
     }
 
-    const customPropertyDefinitions =
-      deduplicateCustomPropertyDefinitions([
-        ...customPropertySourceDefinitions,
-        ...collectInlineCustomPropertyDefinitions(elements),
-      ]);
+    const customPropertyDefinitions = deduplicateCustomPropertyDefinitions([
+      ...customPropertySourceDefinitions,
+      ...collectInlineCustomPropertyDefinitions(elements),
+    ]);
 
     /*
      * V2.2-A2: cascade custom-property definitions independently
@@ -5755,13 +5157,12 @@
      * per-element specified winners; inheritance and var() resolution
      * remain separate later stages.
      */
-    const customPropertyCascade =
-      buildCustomPropertyCascade(
-        customPropertyDefinitions,
-        root,
-        elements,
-        ancestors,
-      );
+    const customPropertyCascade = buildCustomPropertyCascade(
+      customPropertyDefinitions,
+      root,
+      elements,
+      ancestors,
+    );
 
     /*
      * V2.2-A3/A4/A5: resolve var() references against the
@@ -5784,10 +5185,7 @@
      * source declaration records.
      */
 
-    const declarations =
-      createDeclarationRecords(
-        rules,
-      );
+    const declarations = createDeclarationRecords(rules);
 
     /*
      * Determine cascade winners.
@@ -5796,30 +5194,23 @@
      * against expanded properties.
      */
 
-    const cascade =
-      determineWinners(
-        elements,
-        declarations,
-      );
+    const cascade = determineWinners(elements, declarations);
 
     /*
      * Validate against actual computed style.
      */
 
-    validateWinningDeclarations(
-      cascade.winners,
-    );
+    validateWinningDeclarations(cascade.winners);
 
     /*
      * V2.2.0-A7.1: detect inherited properties from computed style
      * and the absence of a target winning declaration. Source mapping
      * remains intentionally deferred to A7.2.
      */
-    const inheritanceDetectionsRaw =
-      detectInheritedProperties(
-        elements,
-        cascade.winners,
-      );
+    const inheritanceDetectionsRaw = detectInheritedProperties(
+      elements,
+      cascade.winners,
+    );
 
     /*
      * V2.2.0-A7.3: map each inherited property to the nearest ancestor
@@ -5827,38 +5218,29 @@
      * uses a separate ancestor cascade so the existing component cascade
      * remains unchanged.
      */
-    const ancestorCascade =
-      buildAncestorCascade(
-        ancestors,
-        stylesheets,
-      );
+    const ancestorCascade = buildAncestorCascade(ancestors, stylesheets);
 
-    const inheritanceDetections =
-      mapInheritanceSources(
-        inheritanceDetectionsRaw,
-        ancestorCascade,
-        cascade,
-      );
+    const inheritanceDetections = mapInheritanceSources(
+      inheritanceDetectionsRaw,
+      ancestorCascade,
+      cascade,
+    );
 
     /*
      * Convert winners into rendering
      * dependencies.
      */
 
-    let renderingDependencies =
-      buildRenderingDependencies(
-        cascade.winners,
-        root,
-      );
+    let renderingDependencies = buildRenderingDependencies(
+      cascade.winners,
+      root,
+    );
 
     /*
      * Deduplicate equivalent dependencies.
      */
 
-    renderingDependencies =
-      deduplicateDependencies(
-        renderingDependencies,
-      );
+    renderingDependencies = deduplicateDependencies(renderingDependencies);
 
     /*
      * V2.2-A3: now that the normal cascade winners have been
@@ -5880,10 +5262,10 @@
      */
     if (varResolutions.referenceCount === 0) {
       const winnerVarDependencies = safeArray(cascade.winners)
-        .filter((winner) =>
-          parseVarFunctions(
-            winner.originalValue || winner.value || "",
-          ).length > 0
+        .filter(
+          (winner) =>
+            parseVarFunctions(winner.originalValue || winner.value || "")
+              .length > 0,
         )
         .map((winner) => ({
           ...winner,
@@ -5942,68 +5324,69 @@
      * Responsive dependencies.
      */
 
-    const responsiveDependencies =
-      renderingDependencies.filter(
-        (dep) =>
-          !!dep.media ||
-          !!dep.supports,
-      );
+    const responsiveDependencies = renderingDependencies.filter(
+      (dep) => dep.responsive === true,
+    );
 
+    const activeResponsiveDependencies = responsiveDependencies.filter(
+      (dep) => dep.responsiveActive === true,
+    );
+
+    const inactiveResponsiveDependencies = responsiveDependencies.filter(
+      (dep) => dep.responsiveActive === false,
+    );
+
+    /*
+     * V2.3.1-R1
+     *
+     * Responsive dependency type counts.
+     */
+    const mediaDependencies = responsiveDependencies.filter(
+      (dep) => dep.responsiveType === "media",
+    );
+
+    const supportsDependencies = responsiveDependencies.filter(
+      (dep) => dep.responsiveType === "supports",
+    );
+
+    const mediaSupportsDependencies = responsiveDependencies.filter(
+      (dep) => dep.responsiveType === "media+supports",
+    );
     /*
      * Dependency categories.
      */
 
-    const globalDependencies =
-      renderingDependencies.filter(
-        (dep) =>
-          dep.dependencyType ===
-          "global-rendering",
-      );
+    const globalDependencies = renderingDependencies.filter(
+      (dep) => dep.dependencyType === "global-rendering",
+    );
 
-    const componentDependencies =
-      renderingDependencies.filter(
-        (dep) =>
-          dep.dependencyType ===
-          "component-rendering",
-      );
+    const componentDependencies = renderingDependencies.filter(
+      (dep) => dep.dependencyType === "component-rendering",
+    );
 
-    const descendantDependencies =
-      renderingDependencies.filter(
-        (dep) =>
-          safeArray(
-            dep.matchedElementLabels,
-          ).some(
-            (label) =>
-              label !==
-              getNodeLabel(root),
-          ),
-      );
+    const descendantDependencies = renderingDependencies.filter((dep) =>
+      safeArray(dep.matchedElementLabels).some(
+        (label) => label !== getNodeLabel(root),
+      ),
+    );
 
-    const variableDependencies =
-      renderingDependencies.filter(
-        (dep) =>
-          safeArray(
-            dep.variableReferences,
-          ).length,
-      );
+    const variableDependencies = renderingDependencies.filter(
+      (dep) => safeArray(dep.variableReferences).length,
+    );
 
     /*
      * Candidate rules include all source
      * declaration records.
      */
 
-    const candidateRules =
-      declarations;
+    const candidateRules = declarations;
 
     /*
      * Group winning dependencies back
      * into source CSS rules.
      */
 
-    const groupedWinningRules =
-      groupDependenciesByRule(
-        renderingDependencies,
-      );
+    const groupedWinningRules = groupDependenciesByRule(renderingDependencies);
 
     /*
      * V2.1.2
@@ -6012,256 +5395,202 @@
      * statistics.
      */
 
-    const shorthandDeclarations =
-      declarations.filter(
-        (declaration) =>
-          declaration.declarationType ===
-          "shorthand",
-      );
+    const shorthandDeclarations = declarations.filter(
+      (declaration) => declaration.declarationType === "shorthand",
+    );
 
-    const longhandDeclarations =
-      declarations.filter(
-        (declaration) =>
-          declaration.declarationType ===
-          "longhand",
-      );
+    const longhandDeclarations = declarations.filter(
+      (declaration) => declaration.declarationType === "longhand",
+    );
 
-    const customPropertyDeclarations =
-      declarations.filter(
-        (declaration) =>
-          declaration.declarationType ===
-          "custom-property",
-      );
+    const customPropertyDeclarations = declarations.filter(
+      (declaration) => declaration.declarationType === "custom-property",
+    );
 
-    const expandedDeclarationCount =
-      declarations.reduce(
-        (total, declaration) =>
-          total +
-          safeArray(
-            declaration.expandedProperties,
-          ).length,
+    const expandedDeclarationCount = declarations.reduce(
+      (total, declaration) =>
+        total + safeArray(declaration.expandedProperties).length,
 
-        0,
-      );
+      0,
+    );
 
     return {
       version: VERSION,
 
       root: {
-        tagName:
-          root.tagName.toLowerCase(),
+        tagName: root.tagName.toLowerCase(),
 
-        id:
-          root.id || "",
+        id: root.id || "",
 
-        className:
-          root.className || "",
+        className: root.className || "",
 
-        label:
-          getNodeLabel(root),
+        label: getNodeLabel(root),
 
-        selector:
-          buildStableSelector(root),
+        selector: buildStableSelector(root),
       },
 
       summary: {
-        domElements:
-          elements.length,
+        domElements: elements.length,
 
-        ancestors:
-          ancestors.length,
+        ancestors: ancestors.length,
 
-        stylesheets:
-          stylesheets.length,
+        stylesheets: stylesheets.length,
 
         accessibleStylesheets,
 
         blockedStylesheets,
 
-        cssCandidates:
-          candidateRules.length,
+        cssCandidates: candidateRules.length,
 
-        renderingDependencies:
-          renderingDependencies.length,
+        renderingDependencies: renderingDependencies.length,
 
-        responsiveDependencies:
-          responsiveDependencies.length,
+        responsiveDependencies: responsiveDependencies.length,
 
-        globalDependencies:
-          globalDependencies.length,
+        /*
+         * V2.3.1-R1
+         *
+         * Responsive dependency statistics.
+         */
 
-        componentDependencies:
-          componentDependencies.length,
+        activeResponsiveDependencies: activeResponsiveDependencies.length,
 
-        descendantDependencies:
-          descendantDependencies.length,
+        inactiveResponsiveDependencies: inactiveResponsiveDependencies.length,
 
-        inlineCSS:
-          rules.filter(
-            (r) =>
-              r.kind === "inline",
-          ).length,
+        responsiveMediaDependencies: mediaDependencies.length,
+
+        responsiveSupportsDependencies: supportsDependencies.length,
+
+        responsiveMediaSupportsDependencies: mediaSupportsDependencies.length,
+
+        globalDependencies: globalDependencies.length,
+
+        componentDependencies: componentDependencies.length,
+
+        descendantDependencies: descendantDependencies.length,
+
+        inlineCSS: rules.filter((r) => r.kind === "inline").length,
 
         liveInlineRuleCount,
 
-        winningInlineDeclarations:
-          cascade.winners.filter(
-            (winner) =>
-              winner.stylesheetIndex === -1 ||
-              winner.rule?.kind === "inline",
-          ).length,
+        winningInlineDeclarations: cascade.winners.filter(
+          (winner) =>
+            winner.stylesheetIndex === -1 || winner.rule?.kind === "inline",
+        ).length,
 
         /* V2.2.0-A3.4 live inline diagnostics. */
-        inlineAnalyzedElements:
-          inlineDiagnostics.analyzedElements,
-        inlineElementsWithStyle:
-          inlineDiagnostics.elementsWithStyle,
-        inlineLiveStyleDeclarations:
-          inlineDiagnostics.liveStyleDeclarations,
-        inlineElementsWithVar:
-          inlineDiagnostics.elementsWithVar,
-        inlineLiveVarReferences:
-          inlineDiagnostics.liveVarReferences,
+        inlineAnalyzedElements: inlineDiagnostics.analyzedElements,
+        inlineElementsWithStyle: inlineDiagnostics.elementsWithStyle,
+        inlineLiveStyleDeclarations: inlineDiagnostics.liveStyleDeclarations,
+        inlineElementsWithVar: inlineDiagnostics.elementsWithVar,
+        inlineLiveVarReferences: inlineDiagnostics.liveVarReferences,
 
-        winningDeclarations:
-          cascade.winners.length,
+        winningDeclarations: cascade.winners.length,
 
-        overriddenDeclarations:
-          cascade.overridden.length,
+        overriddenDeclarations: cascade.overridden.length,
 
-        variableDependencies:
-          variableDependencies.length,
+        variableDependencies: variableDependencies.length,
 
         /*
          * V2.1.2 declaration statistics.
          */
 
-        shorthandDeclarations:
-          shorthandDeclarations.length,
+        shorthandDeclarations: shorthandDeclarations.length,
 
-        longhandDeclarations:
-          longhandDeclarations.length,
+        longhandDeclarations: longhandDeclarations.length,
 
-        customPropertyDeclarations:
-          customPropertyDeclarations.length,
+        customPropertyDeclarations: customPropertyDeclarations.length,
 
         expandedDeclarationCount,
 
-        customPropertyDefinitions:
-          customPropertyDefinitions.length,
+        customPropertyDefinitions: customPropertyDefinitions.length,
 
-        customPropertyNames:
-          Array.from(
-            new Set(customPropertyDefinitions.map((definition) => definition.property)),
+        customPropertyNames: Array.from(
+          new Set(
+            customPropertyDefinitions.map((definition) => definition.property),
           ),
+        ),
 
         customPropertyCascadeCandidates:
           customPropertyCascade.candidates.length,
 
-        customPropertyWinningDefinitions:
-          customPropertyCascade.winningCount,
+        customPropertyWinningDefinitions: customPropertyCascade.winningCount,
 
         customPropertyOverriddenDefinitions:
           customPropertyCascade.overriddenCount,
 
-        varReferences:
-          varResolutions.referenceCount,
+        varReferences: varResolutions.referenceCount,
 
-        varResolvedReferences:
-          varResolutions.resolvedCount,
+        varResolvedReferences: varResolutions.resolvedCount,
 
-        varUnresolvedReferences:
-          varResolutions.unresolvedCount,
+        varUnresolvedReferences: varResolutions.unresolvedCount,
 
-        varPendingReferences:
-          varResolutions.pendingCount || 0,
+        varPendingReferences: varResolutions.pendingCount || 0,
 
-        varNestedReferences:
-          varResolutions.nestedReferenceCount || 0,
+        varNestedReferences: varResolutions.nestedReferenceCount || 0,
 
-        varNestedResolvedReferences:
-          varResolutions.nestedResolvedCount || 0,
+        varNestedResolvedReferences: varResolutions.nestedResolvedCount || 0,
 
         varNestedUnresolvedReferences:
           varResolutions.nestedUnresolvedCount || 0,
 
-        varCircularReferences:
-          varResolutions.circularCount || 0,
+        varCircularReferences: varResolutions.circularCount || 0,
 
-        varFallbackResolvedReferences:
-          safeArray(varResolutions.declarations).reduce(
-            (count, declaration) =>
-              count +
-              safeArray(declaration.references).filter(
-                (reference) => reference.resolutionKind === "fallback",
-              ).length,
-            0,
-          ),
+        varFallbackResolvedReferences: safeArray(
+          varResolutions.declarations,
+        ).reduce(
+          (count, declaration) =>
+            count +
+            safeArray(declaration.references).filter(
+              (reference) => reference.resolutionKind === "fallback",
+            ).length,
+          0,
+        ),
 
         /* V2.2.0-A7.1 inheritance detection statistics. */
-        inheritanceDetections:
-          inheritanceDetections.length,
+        inheritanceDetections: inheritanceDetections.length,
 
-        inheritedElements:
-          new Set(
-            inheritanceDetections.map((record) => record.element),
-          ).size,
+        inheritedElements: new Set(
+          inheritanceDetections.map((record) => record.element),
+        ).size,
 
-        inheritedProperties:
-          Array.from(
-            new Set(
-              inheritanceDetections.map((record) => record.property),
-            ),
-          ),
+        inheritedProperties: Array.from(
+          new Set(inheritanceDetections.map((record) => record.property)),
+        ),
 
         /* V2.2.0-A7.3 inheritance source-mapping statistics. */
-        inheritanceSourceMapped:
-          inheritanceDetections.filter(
-            (record) =>
-              record.status ===
-              "inherited-source-mapped",
-          ).length,
+        inheritanceSourceMapped: inheritanceDetections.filter(
+          (record) => record.status === "inherited-source-mapped",
+        ).length,
 
-        inheritanceSourceUnresolved:
-          inheritanceDetections.filter(
-            (record) =>
-              record.status ===
-              "inherited-source-unresolved",
-          ).length,
+        inheritanceSourceUnresolved: inheritanceDetections.filter(
+          (record) => record.status === "inherited-source-unresolved",
+        ).length,
 
-        inheritanceSourceUnavailable:
-          inheritanceDetections.filter(
-            (record) =>
-              record.status ===
-              "inherited-source-unavailable",
-          ).length,
+        inheritanceSourceUnavailable: inheritanceDetections.filter(
+          (record) => record.status === "inherited-source-unavailable",
+        ).length,
 
         inheritanceAncestorCascadeCandidates:
           ancestorCascade.declarations.length,
 
-        inheritanceAncestorCascadeWinners:
-          ancestorCascade.winners.length,
+        inheritanceAncestorCascadeWinners: ancestorCascade.winners.length,
 
         /* V2.2-A6 variable dependency graph statistics. */
-        variableGraphNodes:
-          variableDependencyGraph.summary.nodeCount,
+        variableGraphNodes: variableDependencyGraph.summary.nodeCount,
 
-        variableGraphEdges:
-          variableDependencyGraph.summary.edgeCount,
+        variableGraphEdges: variableDependencyGraph.summary.edgeCount,
 
         variableGraphVariables:
           variableDependencyGraph.summary.variableNodeCount,
 
-        variableGraphCycles:
-          variableDependencyGraph.summary.cycleCount,
+        variableGraphCycles: variableDependencyGraph.summary.cycleCount,
       },
 
       /*
        * Main dependency list.
        */
 
-      dependencies:
-        renderingDependencies,
+      dependencies: renderingDependencies,
 
       /* V2.2.0-A7.1 inheritance detections. */
       inheritance: {
@@ -6269,19 +5598,13 @@
         count: inheritanceDetections.length,
         sourceMapping: {
           mapped: inheritanceDetections.filter(
-            (record) =>
-              record.status ===
-              "inherited-source-mapped",
+            (record) => record.status === "inherited-source-mapped",
           ).length,
           unresolved: inheritanceDetections.filter(
-            (record) =>
-              record.status ===
-              "inherited-source-unresolved",
+            (record) => record.status === "inherited-source-unresolved",
           ).length,
           unavailable: inheritanceDetections.filter(
-            (record) =>
-              record.status ===
-              "inherited-source-unavailable",
+            (record) => record.status === "inherited-source-unavailable",
           ).length,
         },
         ancestorCascade: {
@@ -6295,58 +5618,47 @@
        * All source declaration candidates.
        */
 
-      candidates:
-        candidateRules,
+      candidates: candidateRules,
 
       /*
        * Cascade-specific data.
        */
 
       cascade: {
-        winners:
-          cascade.winners,
+        winners: cascade.winners,
 
-        overridden:
-          cascade.overridden,
+        overridden: cascade.overridden,
 
-        totalCandidates:
-          declarations.length,
+        totalCandidates: declarations.length,
 
-        expandedCandidates:
-          cascade.cascadeDeclarations.length,
+        expandedCandidates: cascade.cascadeDeclarations.length,
       },
 
       /*
        * Rule-level representation.
        */
 
-      rules:
-        groupedWinningRules,
+      rules: groupedWinningRules,
 
       /*
        * V2.2-A1: discovered custom-property definitions.
        */
 
-      customProperties:
-        customPropertyDefinitions,
+      customProperties: customPropertyDefinitions,
 
       /*
        * V2.2-A2 custom-property cascade.
        */
       customPropertyCascade: {
-        targets:
-          customPropertyCascade.targets.map(
-            (element) => getNodeLabel(element),
-          ),
+        targets: customPropertyCascade.targets.map((element) =>
+          getNodeLabel(element),
+        ),
 
-        candidates:
-          customPropertyCascade.candidates,
+        candidates: customPropertyCascade.candidates,
 
-        winners:
-          customPropertyCascade.winners,
+        winners: customPropertyCascade.winners,
 
-        overridden:
-          customPropertyCascade.overridden,
+        overridden: customPropertyCascade.overridden,
       },
 
       /*
@@ -6368,51 +5680,41 @@
        * Variables.
        */
 
-      variables:
-        Array.from(
-          new Set(
-            renderingDependencies.flatMap(
-              (dep) =>
-                dep.variableReferences ||
-                [],
-            ),
-          ),
+      variables: Array.from(
+        new Set(
+          renderingDependencies.flatMap((dep) => dep.variableReferences || []),
         ),
+      ),
 
       /*
        * Responsive dependencies.
        */
 
-      responsive:
-        responsiveDependencies,
+      responsive: responsiveDependencies,
 
       /*
        * Global dependencies.
        */
 
-      global:
-        globalDependencies,
+      global: globalDependencies,
 
       /*
        * Component dependencies.
        */
 
-      component:
-        componentDependencies,
+      component: componentDependencies,
 
       /*
        * Descendant dependencies.
        */
 
-      descendants:
-        descendantDependencies,
+      descendants: descendantDependencies,
 
       /*
        * Overridden declarations.
        */
 
-      overridden:
-        cascade.overridden,
+      overridden: cascade.overridden,
 
       /*
        * V2.1.2
@@ -6421,20 +5723,15 @@
        */
 
       declarationModel: {
-        total:
-          declarations.length,
+        total: declarations.length,
 
-        shorthand:
-          shorthandDeclarations.length,
+        shorthand: shorthandDeclarations.length,
 
-        longhand:
-          longhandDeclarations.length,
+        longhand: longhandDeclarations.length,
 
-        customProperties:
-          customPropertyDeclarations.length,
+        customProperties: customPropertyDeclarations.length,
 
-        expanded:
-          expandedDeclarationCount,
+        expanded: expandedDeclarationCount,
       },
     };
   }
@@ -6443,78 +5740,48 @@
      STABLE SELECTOR
   ========================================================= */
 
-  function buildStableSelector(
-    element,
-  ) {
-    if (
-      !element ||
-      element.nodeType !== 1
-    ) {
+  function buildStableSelector(element) {
+    if (!element || element.nodeType !== 1) {
       return "";
     }
 
     if (element.id) {
-      return `#${CSS.escape(
-        element.id,
-      )}`;
+      return `#${CSS.escape(element.id)}`;
     }
 
     const path = [];
 
     let current = element;
 
-    while (
-      current &&
-      current.nodeType === 1 &&
-      current !== document.body
-    ) {
-      let part =
-        current.tagName.toLowerCase();
+    while (current && current.nodeType === 1 && current !== document.body) {
+      let part = current.tagName.toLowerCase();
 
       if (current.id) {
-        part += `#${CSS.escape(
-          current.id,
-        )}`;
+        part += `#${CSS.escape(current.id)}`;
 
         path.unshift(part);
 
         break;
       }
 
-      if (
-        current.classList &&
-        current.classList.length
-      ) {
+      if (current.classList && current.classList.length) {
         part +=
           "." +
-          Array.from(
-            current.classList,
-          )
+          Array.from(current.classList)
             .slice(0, 3)
-            .map((c) =>
-              CSS.escape(c),
-            )
+            .map((c) => CSS.escape(c))
             .join(".");
       }
 
-      const parent =
-        current.parentElement;
+      const parent = current.parentElement;
 
       if (parent) {
-        const siblings =
-          Array.from(
-            parent.children,
-          ).filter(
-            (child) =>
-              child.tagName ===
-              current.tagName,
-          );
+        const siblings = Array.from(parent.children).filter(
+          (child) => child.tagName === current.tagName,
+        );
 
         if (siblings.length > 1) {
-          const index =
-            siblings.indexOf(
-              current,
-            ) + 1;
+          const index = siblings.indexOf(current) + 1;
 
           part += `:nth-of-type(${index})`;
         }
@@ -6532,12 +5799,8 @@
      BACKWARD-COMPATIBLE ANALYZE
   ========================================================= */
 
-  function analyzeComponentCSS(
-    root,
-  ) {
-    return analyzeRenderingDependencies(
-      root,
-    );
+  function analyzeComponentCSS(root) {
+    return analyzeRenderingDependencies(root);
   }
 
   /* =========================================================
@@ -6547,15 +5810,12 @@
   window.WCX_CSS = {
     version: VERSION,
 
-    analyze:
-      analyzeComponentCSS,
+    analyze: analyzeComponentCSS,
 
     analyzeRenderingDependencies,
 
-    getElements:
-      getAllComponentElements,
+    getElements: getAllComponentElements,
 
-    getStylesheets:
-      getPageStylesheets,
+    getStylesheets: getPageStylesheets,
   };
 })();
