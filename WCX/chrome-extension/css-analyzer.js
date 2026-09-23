@@ -3500,6 +3500,15 @@
 
         const winner = candidates[candidates.length - 1];
 
+        console.log("[WCX DEBUG] responsive winner:", {
+          media: winner.media,
+          mediaActive: winner.mediaActive,
+          declarationMediaActive: winner.declaration?.mediaActive,
+          supports: winner.supports,
+          supportsActive: winner.supportsActive,
+          declarationSupportsActive: winner.declaration?.supportsActive,
+        });
+
         winner.status = "winning";
 
         winner.cascadeRank = getCascadeRank(winner);
@@ -3560,6 +3569,17 @@
           media: winner.media,
 
           supports: winner.supports,
+
+          /*
+           * V2.3.1-R1
+           *
+           * Preserve the already-evaluated responsive state
+           * from the cascade winner.
+           */
+
+          mediaActive: winner.mediaActive,
+
+          supportsActive: winner.supportsActive,
 
           variableReferences: (() => {
             const stored = safeArray(winner.variableReferences);
