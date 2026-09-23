@@ -2066,6 +2066,14 @@
 
       const ruleType = getRuleTypeName(rule);
 
+      console.log("[WCX TEST] RULE TYPE:", {
+  ruleType,
+  constructor: rule.constructor?.name,
+  cssRuleType: rule.type,
+  conditionText: rule.conditionText || null,
+  selectorText: rule.selectorText || null,
+});
+
       if (ruleType === "style") {
         const selectorText = safeString(rule.selectorText);
 
@@ -3500,15 +3508,6 @@
 
         const winner = candidates[candidates.length - 1];
 
-        console.log("[WCX DEBUG] responsive winner:", {
-          media: winner.media,
-          mediaActive: winner.mediaActive,
-          declarationMediaActive: winner.declaration?.mediaActive,
-          supports: winner.supports,
-          supportsActive: winner.supportsActive,
-          declarationSupportsActive: winner.declaration?.supportsActive,
-        });
-
         winner.status = "winning";
 
         winner.cascadeRank = getCascadeRank(winner);
@@ -4739,7 +4738,11 @@
 
       const dependencyType = classifyDependency(winner, root);
 
+      
+
       const responsiveMetadata = getResponsiveMetadata(winner);
+
+      
 
       return {
         ...winner,
@@ -5256,11 +5259,15 @@
       root,
     );
 
+    
+
     /*
      * Deduplicate equivalent dependencies.
      */
 
     renderingDependencies = deduplicateDependencies(renderingDependencies);
+
+    
 
     /*
      * V2.2-A3: now that the normal cascade winners have been
@@ -5347,6 +5354,8 @@
     const responsiveDependencies = renderingDependencies.filter(
       (dep) => dep.responsive === true,
     );
+
+    
 
     const activeResponsiveDependencies = responsiveDependencies.filter(
       (dep) => dep.responsiveActive === true,

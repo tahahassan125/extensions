@@ -836,6 +836,8 @@ function analyzeSelectedCSS(data) {
 
   console.log("🔥 WCX CSS V2 ANALYSIS:", result);
 
+  
+
   console.log(
     "🔥 WCX UNRESOLVED INHERITANCE:",
     result.inheritance.detections.filter((d) =>
