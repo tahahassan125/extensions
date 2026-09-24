@@ -2103,8 +2103,24 @@
     structuralSelector = structuralSelector.trim();
 
     if (!structuralSelector) {
-      return false;
-    }
+  /*
+   * V2.3.2-A4
+   *
+   * A selector consisting only of a state pseudo-class,
+   * such as:
+   *
+   * :focus
+   * :focus-visible
+   * :hover
+   * :active
+   *
+   * is a global state selector.
+   *
+   * It does not require a structural selector to determine
+   * potential relevance to the selected component.
+   */
+  return true;
+}
 
     /*
      * Test the structural selector against the
@@ -2237,6 +2253,16 @@
         for (const selector of selectors) {
           const stateDependencies = extractStatePseudoSelectors(selector);
 
+          if (selector.includes("focus-visible")) {
+  console.log("🔥 WCX PSEUDO SOURCE DEBUG:", {
+    selector,
+    selectorJSON: JSON.stringify(selector),
+    cssText: rule.cssText,
+    cssTextJSON: JSON.stringify(rule.cssText),
+    stateDependencies,
+  });
+}
+
           if (selector.includes(":hover")) {
             console.log("🔥 WCX HOVER RULE FOUND:", {
               selector,
@@ -2260,6 +2286,26 @@
             selector,
             context.elements,
           );
+
+          if (
+            selector.includes("link--text") ||
+            selector.includes("focus-visible")
+          ) {
+            console.log("🔥 WCX STATE DEBUG:", {
+              selector,
+              selectorJSON: JSON.stringify(selector),
+              stateDependencies,
+              stateSelectorRelevant,
+              characters: Array.from(selector).map((char, index) => ({
+                index,
+                char,
+                code: char.charCodeAt(0),
+              })),
+              characterString: Array.from(selector)
+                .map((char, index) => `${index}:${char}[${char.charCodeAt(0)}]`)
+                .join(" "),
+            });
+          }
 
           let effectiveMatchedElements = matchedElements;
 
