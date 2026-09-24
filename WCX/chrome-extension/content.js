@@ -658,10 +658,7 @@ function generateSelector(element) {
     try {
       const matches = document.querySelectorAll(candidateSelector);
 
-      if (
-        matches.length === 1 &&
-        matches[0] === element
-      ) {
+      if (matches.length === 1 && matches[0] === element) {
         return candidateSelector;
       }
     } catch (error) {}
@@ -899,7 +896,6 @@ function analyzeSelectedCSS(data) {
 
   console.log("🔥 WCX CSS V2 ANALYSIS:", result);
 
-
   console.log(
     "🔥 WCX UNRESOLVED INHERITANCE:",
     result.inheritance.detections.filter((d) =>
@@ -1088,6 +1084,14 @@ function showCSSAnalysisResult(result) {
         media: dependency.media,
 
         supports: dependency.supports,
+
+        responsive: dependency.responsive === true,
+
+        responsiveType: dependency.responsiveType,
+
+        responsiveCondition: dependency.responsiveCondition,
+
+        responsiveActive: dependency.responsiveActive,
 
         dependencyType: safeString(dependency.dependencyType),
 
