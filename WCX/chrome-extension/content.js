@@ -1143,6 +1143,14 @@ function showCSSAnalysisResult(result) {
       media: declaration.media,
 
       supports: declaration.supports,
+
+      responsive: declaration.responsive === true,
+
+      responsiveType: declaration.responsiveType,
+
+      responsiveCondition: declaration.responsiveCondition,
+
+      responsiveActive: declaration.responsiveActive,
     });
   }
 
@@ -1403,6 +1411,27 @@ function showCSSAnalysisResult(result) {
                         `
                     : ""
                 }
+
+                ${
+  group.responsive
+    ? `
+        <span class="wcx-css-badge">
+            Responsive:
+            ${escapeHTML(group.responsiveType || "yes")}
+        </span>
+
+        <span class="wcx-css-badge">
+            ${
+              group.responsiveActive
+                ? "ACTIVE"
+                : "INACTIVE"
+            }
+        </span>
+    `
+    : ""
+}
+
+
             `;
 
       card.appendChild(metadata);
