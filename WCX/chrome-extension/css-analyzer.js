@@ -1967,6 +1967,166 @@
   }
 
   /* =========================================================
+   V2.3.2-A1 - PSEUDO / STATE DEPENDENCY MODEL
+========================================================= */
+
+  const WCX_STATE_PSEUDO_SELECTORS = [
+    ":hover",
+    ":focus",
+    ":focus-visible",
+    ":focus-within",
+    ":active",
+    ":visited",
+    ":checked",
+    ":disabled",
+    ":enabled",
+    ":required",
+    ":optional",
+    ":valid",
+    ":invalid",
+    ":in-range",
+    ":out-of-range",
+    ":read-only",
+    ":read-write",
+    ":placeholder-shown",
+    ":autofill",
+    ":target",
+    ":open",
+  ];
+
+  /* =========================================================
+   V2.3.2-A2 - EXTRACT STATE PSEUDO SELECTORS
+========================================================= */
+
+  function extractStatePseudoSelectors(selector) {
+    const states = [];
+
+    if (!selector) {
+      return states;
+    }
+
+    const normalizedSelector = String(selector);
+
+    for (const pseudo of WCX_STATE_PSEUDO_SELECTORS) {
+      const pseudoName = pseudo.slice(1);
+
+      let index = 0;
+
+      while (index < normalizedSelector.length) {
+        const character = normalizedSelector[index];
+
+        /*
+         * CSS escape:
+         *
+         * Skip the escaped character so an escaped
+         * colon such as:
+         *
+         * \:hover
+         *
+         * can never be interpreted as a pseudo-class.
+         */
+        if (character === "\\") {
+          index += 2;
+          continue;
+        }
+
+        if (character !== ":") {
+          index++;
+          continue;
+        }
+
+        /*
+         * Check the pseudo name immediately after
+         * the unescaped colon.
+         */
+        if (normalizedSelector.startsWith(pseudoName, index + 1)) {
+          const endIndex = index + 1 + pseudoName.length;
+
+          const nextCharacter = normalizedSelector[endIndex];
+
+          /*
+           * Prevent:
+           *
+           * :focus-visible
+           *
+           * from also being detected as:
+           *
+           * :focus
+           */
+          const validBoundary =
+            nextCharacter == null || !/[a-zA-Z0-9_-]/.test(nextCharacter);
+
+          if (validBoundary) {
+            states.push(pseudo);
+            break;
+          }
+        }
+
+        index++;
+      }
+    }
+
+    return states;
+  }
+
+  /* =========================================================
+   V2.3.2-A4 - STATE SELECTOR RELEVANCE
+========================================================= */
+
+  function isStateSelectorRelevantToComponent(selector, elements) {
+    if (!selector || !Array.isArray(elements)) {
+      return false;
+    }
+
+    const stateDependencies = extractStatePseudoSelectors(selector);
+
+    if (!stateDependencies.length) {
+      return false;
+    }
+
+    /*
+     * Remove state pseudo selectors so we can test
+     * the underlying structural selector.
+     *
+     * Example:
+     *
+     * .button:hover
+     *        ↓
+     * .button
+     */
+    let structuralSelector = selector;
+
+    for (const pseudo of stateDependencies) {
+      structuralSelector = structuralSelector.replace(pseudo, "");
+    }
+
+    structuralSelector = structuralSelector.trim();
+
+    if (!structuralSelector) {
+      return false;
+    }
+
+    /*
+     * Test the structural selector against the
+     * actual component elements.
+     */
+    for (const element of elements) {
+      try {
+        if (element.matches(structuralSelector)) {
+          return true;
+        }
+      } catch (error) {
+        /*
+         * Invalid / unsupported selector.
+         * Ignore and continue checking other elements.
+         */
+      }
+    }
+
+    return false;
+  }
+
+  /* =========================================================
      SELECTOR MATCHING
   ========================================================= */
 
@@ -2075,12 +2235,50 @@
           .filter(Boolean);
 
         for (const selector of selectors) {
+          const stateDependencies = extractStatePseudoSelectors(selector);
+
+          if (selector.includes(":hover")) {
+            console.log("🔥 WCX HOVER RULE FOUND:", {
+              selector,
+              stateDependencies,
+            });
+          }
+
+          if (stateDependencies.length) {
+            console.log("🔥 WCX STATE RULE FOUND:", {
+              selector,
+              stateDependencies,
+            });
+          }
+
           const matchedElements = selectorMatchesComponent(
             selector,
             context.elements,
           );
 
-          if (!matchedElements.length) {
+          const stateSelectorRelevant = isStateSelectorRelevantToComponent(
+            selector,
+            context.elements,
+          );
+
+          let effectiveMatchedElements = matchedElements;
+
+          if (stateSelectorRelevant && !matchedElements.length) {
+            let structuralSelector = selector;
+
+            for (const pseudo of stateDependencies) {
+              structuralSelector = structuralSelector.replace(pseudo, "");
+            }
+
+            structuralSelector = structuralSelector.trim();
+
+            effectiveMatchedElements = selectorMatchesComponent(
+              structuralSelector,
+              context.elements,
+            );
+          }
+
+          if (!matchedElements.length && !stateSelectorRelevant) {
             continue;
           }
 
@@ -2095,18 +2293,20 @@
 
             originalSelector: selectorText,
 
+            stateDependencies,
+
             cssText: safeString(rule.cssText),
 
             declarations,
 
-            matchedElements,
+            matchedElements: effectiveMatchedElements,
 
-            matchedElementLabels: matchedElements.map(getNodeLabel),
+            matchedElementLabels: effectiveMatchedElements.map(getNodeLabel),
 
             /*
              * V2.1.2
              */
-            matchedElementDetails: matchedElements
+            matchedElementDetails: effectiveMatchedElements
               .map(getElementMetadata)
               .filter(Boolean),
 
@@ -2387,6 +2587,11 @@
           .split(",")
           .map((s) => s.trim())
           .filter(Boolean);
+
+        const selectorStateDependencies = selectors.map((selector) => ({
+          selector,
+          states: extractStatePseudoSelectors(selector),
+        }));
 
         for (const selector of selectors) {
           if (
@@ -4730,11 +4935,7 @@
 
       const dependencyType = classifyDependency(winner, root);
 
-      
-
       const responsiveMetadata = getResponsiveMetadata(winner);
-
-      
 
       return {
         ...winner,
@@ -5251,15 +5452,11 @@
       root,
     );
 
-    
-
     /*
      * Deduplicate equivalent dependencies.
      */
 
     renderingDependencies = deduplicateDependencies(renderingDependencies);
-
-    
 
     /*
      * V2.2-A3: now that the normal cascade winners have been
@@ -5346,8 +5543,6 @@
     const responsiveDependencies = renderingDependencies.filter(
       (dep) => dep.responsive === true,
     );
-
-    
 
     const activeResponsiveDependencies = responsiveDependencies.filter(
       (dep) => dep.responsiveActive === true,

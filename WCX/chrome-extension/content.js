@@ -897,6 +897,16 @@ function analyzeSelectedCSS(data) {
   console.log("🔥 WCX CSS V2 ANALYSIS:", result);
 
   console.log(
+  "🔥 WCX STATE DEPENDENCIES:",
+  result.dependencies
+    .filter((item) => item.stateDependencies?.length)
+    .map((item) => ({
+      selector: item.selector,
+      stateDependencies: item.stateDependencies,
+    })),
+);
+
+  console.log(
     "🔥 WCX UNRESOLVED INHERITANCE:",
     result.inheritance.detections.filter((d) =>
       JSON.stringify(d).toLowerCase().includes("unresolved"),
@@ -1250,6 +1260,10 @@ function showCSSAnalysisResult(result) {
 
     ["Responsive Dependencies", summary.responsiveDependencies ?? 0],
 
+    ["Active Responsive", summary.activeResponsiveDependencies ?? 0],
+
+    ["Inactive Responsive", summary.inactiveResponsiveDependencies ?? 0],
+
     ["Global Dependencies", summary.globalDependencies ?? 0],
 
     ["Component Dependencies", summary.componentDependencies ?? 0],
@@ -1413,23 +1427,19 @@ function showCSSAnalysisResult(result) {
                 }
 
                 ${
-  group.responsive
-    ? `
+                  group.responsive
+                    ? `
         <span class="wcx-css-badge">
             Responsive:
             ${escapeHTML(group.responsiveType || "yes")}
         </span>
 
         <span class="wcx-css-badge">
-            ${
-              group.responsiveActive
-                ? "ACTIVE"
-                : "INACTIVE"
-            }
+            ${group.responsiveActive ? "ACTIVE" : "INACTIVE"}
         </span>
     `
-    : ""
-}
+                    : ""
+                }
 
 
             `;
