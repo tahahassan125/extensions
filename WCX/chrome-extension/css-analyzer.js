@@ -2066,14 +2066,6 @@
 
       const ruleType = getRuleTypeName(rule);
 
-      console.log("[WCX TEST] RULE TYPE:", {
-  ruleType,
-  constructor: rule.constructor?.name,
-  cssRuleType: rule.type,
-  conditionText: rule.conditionText || null,
-  selectorText: rule.selectorText || null,
-});
-
       if (ruleType === "style") {
         const selectorText = safeString(rule.selectorText);
 

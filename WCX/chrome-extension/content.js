@@ -582,8 +582,21 @@ function removeWCXClasses(root) {
 ========================================= */
 
 function generateSelector(element) {
+  if (!element || element.nodeType !== Node.ELEMENT_NODE) {
+    return "";
+  }
+
+  /*
+   * Prefer a unique ID.
+   */
   if (element.id) {
-    return `#${CSS.escape(element.id)}`;
+    const idSelector = `#${CSS.escape(element.id)}`;
+
+    try {
+      if (document.querySelectorAll(idSelector).length === 1) {
+        return idSelector;
+      }
+    } catch (error) {}
   }
 
   const path = [];
@@ -597,22 +610,72 @@ function generateSelector(element) {
   ) {
     let selector = current.tagName.toLowerCase();
 
-    if (current.classList.length) {
-      const classes = Array.from(current.classList)
-        .filter((className) => !className.startsWith("wcx-"))
-        .slice(0, 4)
-        .map((className) => CSS.escape(className));
+    /*
+     * Use legitimate page classes.
+     *
+     * WCX's own classes such as:
+     * - wcx-component-hover
+     * - wcx-selected
+     * - etc.
+     *
+     * are intentionally excluded.
+     */
+    const classes = Array.from(current.classList)
+      .filter((className) => !className.startsWith("wcx-"))
+      .slice(0, 4)
+      .map((className) => CSS.escape(className));
 
-      if (classes.length) {
-        selector += "." + classes.join(".");
+    if (classes.length) {
+      selector += "." + classes.join(".");
+    }
+
+    /*
+     * Add nth-of-type when necessary to distinguish
+     * between otherwise identical sibling elements.
+     */
+    const parent = current.parentElement;
+
+    if (parent) {
+      const sameTagSiblings = Array.from(parent.children).filter(
+        (child) => child.tagName === current.tagName,
+      );
+
+      if (sameTagSiblings.length > 1) {
+        const index = sameTagSiblings.indexOf(current) + 1;
+
+        selector += `:nth-of-type(${index})`;
       }
     }
 
     path.unshift(selector);
 
+    const candidateSelector = path.join(" > ");
+
+    /*
+     * Verify that this selector actually resolves
+     * to the exact element we selected.
+     */
+    try {
+      const matches = document.querySelectorAll(candidateSelector);
+
+      if (
+        matches.length === 1 &&
+        matches[0] === element
+      ) {
+        return candidateSelector;
+      }
+    } catch (error) {}
+
     current = current.parentElement;
   }
 
+  /*
+   * Final fallback.
+   *
+   * If the generated path somehow isn't unique,
+   * return the full path anyway rather than returning
+   * a dangerously broad selector such as "div".
+   */
   return path.join(" > ");
 }
 
@@ -836,7 +899,6 @@ function analyzeSelectedCSS(data) {
 
   console.log("🔥 WCX CSS V2 ANALYSIS:", result);
 
-  
 
   console.log(
     "🔥 WCX UNRESOLVED INHERITANCE:",
