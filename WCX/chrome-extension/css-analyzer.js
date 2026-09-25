@@ -2103,30 +2103,38 @@
     structuralSelector = structuralSelector.trim();
 
     if (!structuralSelector) {
-  /*
-   * V2.3.2-A4
-   *
-   * A selector consisting only of a state pseudo-class,
-   * such as:
-   *
-   * :focus
-   * :focus-visible
-   * :hover
-   * :active
-   *
-   * is a global state selector.
-   *
-   * It does not require a structural selector to determine
-   * potential relevance to the selected component.
-   */
-  return true;
-}
+      /*
+       * V2.3.2-A4
+       *
+       * A selector consisting only of a state pseudo-class,
+       * such as:
+       *
+       * :focus
+       * :focus-visible
+       * :hover
+       * :active
+       *
+       * is a global state selector.
+       *
+       * It does not require a structural selector to determine
+       * potential relevance to the selected component.
+       */
+      return true;
+    }
 
     /*
      * Test the structural selector against the
      * actual component elements.
      */
     for (const element of elements) {
+      if (selector.includes("wcx-state-test")) {
+        console.log("🔥 WCX A4 STRUCTURAL TEST:", {
+          selector,
+          structuralSelector,
+          element,
+          elementMatches: element.matches(structuralSelector),
+        });
+      }
       try {
         if (element.matches(structuralSelector)) {
           return true;
@@ -2245,6 +2253,17 @@
       if (ruleType === "style") {
         const selectorText = safeString(rule.selectorText);
 
+        if (selectorText.includes("wcx-state-test")) {
+          console.log("🔥 WCX SYNTHETIC RULE IN WALK:", {
+            selectorText,
+            cssText: rule.cssText,
+            stylesheetIndex: stylesheetMeta.index,
+            stylesheetHref: stylesheetMeta.href,
+            stylesheetTitle: stylesheetMeta.title,
+            ruleIndex: index,
+          });
+        }
+
         const selectors = selectorText
           .split(",")
           .map((s) => s.trim())
@@ -2253,15 +2272,22 @@
         for (const selector of selectors) {
           const stateDependencies = extractStatePseudoSelectors(selector);
 
+          if (selector.includes("wcx-state-test")) {
+            console.log("🔥 WCX SYNTHETIC STATE EXTRACTION:", {
+              selector,
+              stateDependencies,
+            });
+          }
+
           if (selector.includes("focus-visible")) {
-  console.log("🔥 WCX PSEUDO SOURCE DEBUG:", {
-    selector,
-    selectorJSON: JSON.stringify(selector),
-    cssText: rule.cssText,
-    cssTextJSON: JSON.stringify(rule.cssText),
-    stateDependencies,
-  });
-}
+            console.log("🔥 WCX PSEUDO SOURCE DEBUG:", {
+              selector,
+              selectorJSON: JSON.stringify(selector),
+              cssText: rule.cssText,
+              cssTextJSON: JSON.stringify(rule.cssText),
+              stateDependencies,
+            });
+          }
 
           if (selector.includes(":hover")) {
             console.log("🔥 WCX HOVER RULE FOUND:", {
