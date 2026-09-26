@@ -3861,6 +3861,15 @@
 
           supportsActive: winner.supportsActive,
 
+          /*
+           * V2.3.2-A5
+           *
+           * Preserve state/pseudo dependency metadata
+           * from the cascade winner.
+           */
+
+          stateDependencies: safeArray(winner.stateDependencies),
+
           variableReferences: (() => {
             const stored = safeArray(winner.variableReferences);
             if (stored.length) return stored;
