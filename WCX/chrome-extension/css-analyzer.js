@@ -2200,19 +2200,22 @@
 
     /*
      * Ask the browser whether the complete selector
-     * currently matches the element.
+     * currently matches any element.
      *
-     * This allows the browser to evaluate actual
-     * interaction state such as:
+     * Unlike element.matches(selector), this also
+     * correctly handles selectors where the state
+     * belongs to an ancestor, for example:
      *
-     * :hover
-     * :focus
-     * :focus-visible
-     * :active
-     * etc.
+     * .modal__close-button:hover .icon
+     *
+     * Here:
+     *   :hover -> .modal__close-button
+     *   matched element -> .icon
      */
     try {
-      return element.matches(selector);
+      const matchedElements = document.querySelectorAll(selector);
+
+      return Array.from(matchedElements).includes(element);
     } catch (error) {
       return false;
     }
@@ -2294,17 +2297,7 @@
         for (const selector of selectors) {
           const stateDependencies = extractStatePseudoSelectors(selector);
 
-          if (
-            selector.includes("state-test-target") ||
-            selector.includes("abc-test")
-          ) {
-            console.log("🔥 WCX STATE PIPELINE TRACE:", {
-              selector,
-              selectorJSON: JSON.stringify(selector),
-              stateDependencies,
-              cssText: rule.cssText,
-            });
-          }
+          
 
           const matchedElements = selectorMatchesComponent(
             selector,
@@ -3771,6 +3764,8 @@
         candidates.sort(compareCascadePriority);
 
         const winner = candidates[candidates.length - 1];
+
+      
 
         winner.status = "winning";
 
