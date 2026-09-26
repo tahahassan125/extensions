@@ -895,6 +895,8 @@ function analyzeSelectedCSS(data) {
   }
 
   console.log("🔥 WCX CSS V2 ANALYSIS:", result);
+  window.__WCX_LAST_RESULT__ = result;
+
 
   console.log(
   "🔥 WCX STATE DEPENDENCIES:",
