@@ -2297,8 +2297,6 @@
         for (const selector of selectors) {
           const stateDependencies = extractStatePseudoSelectors(selector);
 
-          
-
           const matchedElements = selectorMatchesComponent(
             selector,
             context.elements,
@@ -3764,8 +3762,6 @@
         candidates.sort(compareCascadePriority);
 
         const winner = candidates[candidates.length - 1];
-
-      
 
         winner.status = "winning";
 
