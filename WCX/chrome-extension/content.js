@@ -895,7 +895,6 @@ function analyzeSelectedCSS(data) {
   }
 
   console.log("🔥 WCX CSS V2 ANALYSIS:", result);
-  window.__WCX_LAST_RESULT__ = result;
 
   console.log(
     "🔥 WCX STATE DEPENDENCIES:",
@@ -906,24 +905,6 @@ function analyzeSelectedCSS(data) {
         stateDependencies: item.stateDependencies,
       })),
   );
-
-  console.table(
-  result.dependencies
-    .filter(
-      (dep) =>
-        Array.isArray(dep.stateDependencies) &&
-        dep.stateDependencies.length > 0
-    )
-    .map((dep) => ({
-      selector: dep.selector,
-      property: dep.property,
-      stateDependencies: dep.stateDependencies.join(", "),
-      matchesComputed: dep.matchesComputed,
-      renderRelevant: dep.renderRelevant,
-      computedValue: dep.computedValue,
-      value: dep.value,
-    })),
-);
 
   console.log(
     "🔥 WCX UNRESOLVED INHERITANCE:",

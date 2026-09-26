@@ -2178,49 +2178,45 @@
   }
 
   /*
- * V2.3.2-B
- *
- * Determine whether a state/pseudo selector is
- * currently active for the target element.
- *
- * This is intentionally separate from
- * selectorMatchesElement(), which performs
- * structural selector matching only.
- */
-function isStateSelectorActive(selector, element) {
-  if (!selector || !element) {
-    return false;
-  }
-
-  const stateDependencies =
-    extractStatePseudoSelectors(selector);
-
-  if (!stateDependencies.length) {
-    return false;
-  }
-
-  /*
-   * Ask the browser whether the complete selector
-   * currently matches the element.
+   * V2.3.2-B
    *
-   * This allows the browser to evaluate actual
-   * interaction state such as:
+   * Determine whether a state/pseudo selector is
+   * currently active for the target element.
    *
-   * :hover
-   * :focus
-   * :focus-visible
-   * :active
-   * etc.
+   * This is intentionally separate from
+   * selectorMatchesElement(), which performs
+   * structural selector matching only.
    */
-  try {
-    return element.matches(selector);
-  } catch (error) {
-    return false;
+  function isStateSelectorActive(selector, element) {
+    if (!selector || !element) {
+      return false;
+    }
+
+    const stateDependencies = extractStatePseudoSelectors(selector);
+
+    if (!stateDependencies.length) {
+      return false;
+    }
+
+    /*
+     * Ask the browser whether the complete selector
+     * currently matches the element.
+     *
+     * This allows the browser to evaluate actual
+     * interaction state such as:
+     *
+     * :hover
+     * :focus
+     * :focus-visible
+     * :active
+     * etc.
+     */
+    try {
+      return element.matches(selector);
+    } catch (error) {
+      return false;
+    }
   }
-}
-
-
-
 
   function selectorMatchesComponent(selector, elements) {
     const matchedElements = [];
@@ -2289,17 +2285,6 @@ function isStateSelectorActive(selector, element) {
 
       if (ruleType === "style") {
         const selectorText = safeString(rule.selectorText);
-
-        if (selectorText.includes("wcx-state-test")) {
-          console.log("🔥 WCX SYNTHETIC RULE IN WALK:", {
-            selectorText,
-            cssText: rule.cssText,
-            stylesheetIndex: stylesheetMeta.index,
-            stylesheetHref: stylesheetMeta.href,
-            stylesheetTitle: stylesheetMeta.title,
-            ruleIndex: index,
-          });
-        }
 
         const selectors = selectorText
           .split(",")
@@ -3869,6 +3854,24 @@ function isStateSelectorActive(selector, element) {
           stateDependencies: safeArray(
             winner.stateDependencies || winner.rule?.stateDependencies,
           ),
+
+          /*
+           * V2.3.2-B
+           *
+           * Track whether a state/pseudo selector is
+           * currently active for the matched element.
+           */
+          stateActive: (() => {
+            const stateDependencies = safeArray(
+              winner.stateDependencies || winner.rule?.stateDependencies,
+            );
+
+            if (!stateDependencies.length) {
+              return false;
+            }
+
+            return isStateSelectorActive(winner.selector, element);
+          })(),
 
           variableReferences: (() => {
             const stored = safeArray(winner.variableReferences);
