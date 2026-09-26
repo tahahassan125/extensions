@@ -2127,7 +2127,7 @@
      * actual component elements.
      */
     for (const element of elements) {
-      if (selector.includes("wcx-state-test")) {
+      if (selector.includes("state-test-target")) {
         console.log("🔥 WCX A4 STRUCTURAL TEST:", {
           selector,
           structuralSelector,
@@ -2272,7 +2272,19 @@
         for (const selector of selectors) {
           const stateDependencies = extractStatePseudoSelectors(selector);
 
-          if (selector.includes("wcx-state-test")) {
+          if (
+            selector.includes("state-test-target") ||
+            selector.includes("abc-test")
+          ) {
+            console.log("🔥 WCX STATE PIPELINE TRACE:", {
+              selector,
+              selectorJSON: JSON.stringify(selector),
+              stateDependencies,
+              cssText: rule.cssText,
+            });
+          }
+
+          if (selector.includes("state-test-target")) {
             console.log("🔥 WCX SYNTHETIC STATE EXTRACTION:", {
               selector,
               stateDependencies,
