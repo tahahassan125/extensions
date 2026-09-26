@@ -2371,18 +2371,16 @@
           const declarations = getStyleDeclarations(rule.style, rule.cssText);
 
           /*
- * V2.3.2-A5
- *
- * Preserve rule-level state/pseudo dependencies
- * on each declaration so cascade candidates
- * and winners retain the state context.
- */
+           * V2.3.2-A5
+           *
+           * Preserve rule-level state/pseudo dependencies
+           * on each declaration so cascade candidates
+           * and winners retain the state context.
+           */
 
-for (const declaration of declarations) {
-  declaration.stateDependencies = safeArray(
-    stateDependencies,
-  );
-}
+          for (const declaration of declarations) {
+            declaration.stateDependencies = safeArray(stateDependencies);
+          }
 
           output.push({
             kind: "css-rule",
@@ -3882,7 +3880,9 @@ for (const declaration of declarations) {
            * from the cascade winner.
            */
 
-          stateDependencies: safeArray(winner.stateDependencies),
+          stateDependencies: safeArray(
+            winner.stateDependencies || winner.rule?.stateDependencies,
+          ),
 
           variableReferences: (() => {
             const stored = safeArray(winner.variableReferences);
