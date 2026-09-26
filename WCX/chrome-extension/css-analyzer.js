@@ -2177,6 +2177,51 @@
     }
   }
 
+  /*
+ * V2.3.2-B
+ *
+ * Determine whether a state/pseudo selector is
+ * currently active for the target element.
+ *
+ * This is intentionally separate from
+ * selectorMatchesElement(), which performs
+ * structural selector matching only.
+ */
+function isStateSelectorActive(selector, element) {
+  if (!selector || !element) {
+    return false;
+  }
+
+  const stateDependencies =
+    extractStatePseudoSelectors(selector);
+
+  if (!stateDependencies.length) {
+    return false;
+  }
+
+  /*
+   * Ask the browser whether the complete selector
+   * currently matches the element.
+   *
+   * This allows the browser to evaluate actual
+   * interaction state such as:
+   *
+   * :hover
+   * :focus
+   * :focus-visible
+   * :active
+   * etc.
+   */
+  try {
+    return element.matches(selector);
+  } catch (error) {
+    return false;
+  }
+}
+
+
+
+
   function selectorMatchesComponent(selector, elements) {
     const matchedElements = [];
 
