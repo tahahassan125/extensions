@@ -4977,6 +4977,19 @@
     };
   }
 
+  /*
+   * V2.3.2-B
+   *
+   * Determine whether a rendering dependency belongs
+   * to a state/pseudo selector.
+   */
+  function hasStateDependency(dependency) {
+    return (
+      Array.isArray(dependency?.stateDependencies) &&
+      dependency.stateDependencies.length > 0
+    );
+  }
+
   function buildRenderingDependencies(winners, root) {
     return safeArray(winners).map((winner) => {
       const matchedElementLabels = safeArray(winner.matchedElementLabels);
@@ -5035,8 +5048,18 @@
 
         dependencyType,
 
+        /*
+         * V2.3.2-B
+         *
+         * State/pseudo dependencies are potential rendering
+         * dependencies even when their state is not currently active.
+         *
+         * Current-state activation will be tracked separately.
+         */
         renderRelevant:
-          winner.matchesComputed === true || winner.variableDependent === true,
+          winner.matchesComputed === true ||
+          winner.variableDependent === true ||
+          hasStateDependency(winner),
       };
     });
   }
