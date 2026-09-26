@@ -897,14 +897,31 @@ function analyzeSelectedCSS(data) {
   console.log("🔥 WCX CSS V2 ANALYSIS:", result);
   window.__WCX_LAST_RESULT__ = result;
 
-
   console.log(
-  "🔥 WCX STATE DEPENDENCIES:",
+    "🔥 WCX STATE DEPENDENCIES:",
+    result.dependencies
+      .filter((item) => item.stateDependencies?.length)
+      .map((item) => ({
+        selector: item.selector,
+        stateDependencies: item.stateDependencies,
+      })),
+  );
+
+  console.table(
   result.dependencies
-    .filter((item) => item.stateDependencies?.length)
-    .map((item) => ({
-      selector: item.selector,
-      stateDependencies: item.stateDependencies,
+    .filter(
+      (dep) =>
+        Array.isArray(dep.stateDependencies) &&
+        dep.stateDependencies.length > 0
+    )
+    .map((dep) => ({
+      selector: dep.selector,
+      property: dep.property,
+      stateDependencies: dep.stateDependencies.join(", "),
+      matchesComputed: dep.matchesComputed,
+      renderRelevant: dep.renderRelevant,
+      computedValue: dep.computedValue,
+      value: dep.value,
     })),
 );
 
