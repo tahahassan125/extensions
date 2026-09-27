@@ -4916,8 +4916,29 @@
   ========================================================= */
 
   function classifyDependency(winner, root) {
-    const selector = safeString(winner.selector);
+    const selector = safeString(winner.selector).trim();
 
+    /*
+     * V2.4.1
+     *
+     * Direct global rendering selectors must be
+     * classified before framework detection.
+     *
+     * These selectors can affect the rendering context
+     * of the selected component regardless of whether
+     * the stylesheet is a framework stylesheet or not.
+     */
+    if (selector === "*" || selector === "html" || selector === "body") {
+      return "global-rendering";
+    }
+
+    /*
+     * Framework rendering dependency.
+     *
+     * Framework rules that specifically target the
+     * selected component remain component-rendering.
+     * Other framework rules remain framework-rendering.
+     */
     if (winner.stylesheetFramework !== "Unknown") {
       if (
         selector.includes(root.tagName.toLowerCase()) ||
@@ -4929,15 +4950,15 @@
       return "framework-rendering";
     }
 
+    /*
+     * Non-framework rules targeting the selected
+     * component.
+     */
     if (
       (root.id && selector.includes(`#${root.id}`)) ||
       selector.includes(root.tagName.toLowerCase())
     ) {
       return "component-rendering";
-    }
-
-    if (selector === "*" || selector === "html" || selector === "body") {
-      return "global-rendering";
     }
 
     return "generic-rendering";
