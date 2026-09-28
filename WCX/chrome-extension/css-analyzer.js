@@ -4975,6 +4975,118 @@
   }
 
   /* =========================================================
+   V2.4.3-A - GLOBAL RENDERING ROLE
+========================================================= */
+
+  function classifyGlobalRenderingRole(winner) {
+    const selector = safeString(winner?.selector).trim().toLowerCase();
+
+    const property = safeString(winner?.property).trim().toLowerCase();
+
+    /*
+     * Global reset / inheritance setup.
+     *
+     * These rules establish a rendering baseline
+     * that descendants/components can inherit or use.
+     */
+    const globalResetProperties = new Set(["box-sizing"]);
+
+    if (selector === "*" && globalResetProperties.has(property)) {
+      return "global-reset";
+    }
+
+    /*
+     * Global properties whose values can participate
+     * in the inherited styling context of descendants.
+     */
+    const globalInheritedProperties = new Set([
+      "color",
+      "font",
+      "font-family",
+      "font-size",
+      "font-style",
+      "font-variant",
+      "font-weight",
+      "font-stretch",
+      "line-height",
+      "letter-spacing",
+      "text-align",
+      "text-indent",
+      "text-transform",
+      "white-space",
+      "word-spacing",
+      "visibility",
+      "cursor",
+      "list-style",
+      "list-style-type",
+      "list-style-position",
+      "list-style-image",
+    ]);
+
+    if (globalInheritedProperties.has(property)) {
+      return "global-inherited";
+    }
+
+    /*
+     * Global page-level layout/context.
+     */
+    const globalLayoutProperties = new Set([
+      "display",
+      "position",
+      "inset",
+      "top",
+      "right",
+      "bottom",
+      "left",
+      "width",
+      "height",
+      "min-width",
+      "min-height",
+      "max-width",
+      "max-height",
+      "margin",
+      "margin-top",
+      "margin-right",
+      "margin-bottom",
+      "margin-left",
+      "padding",
+      "padding-top",
+      "padding-right",
+      "padding-bottom",
+      "padding-left",
+      "grid",
+      "grid-template",
+      "grid-template-rows",
+      "grid-template-columns",
+      "grid-area",
+      "grid-auto-flow",
+      "grid-auto-rows",
+      "grid-auto-columns",
+      "flex",
+      "flex-direction",
+      "flex-wrap",
+      "justify-content",
+      "align-items",
+      "align-content",
+      "place-items",
+      "place-content",
+      "overflow",
+      "overflow-x",
+      "overflow-y",
+    ]);
+
+    if (globalLayoutProperties.has(property)) {
+      return "global-layout";
+    }
+
+    /*
+     * Global rule that does not fit one of the
+     * explicitly defined roles above.
+     */
+    return "global-context";
+  }
+
+  /* =========================================================
    V2.3.1-R1 - RESPONSIVE DEPENDENCY MODEL
 ========================================================= */
 
@@ -5082,6 +5194,8 @@
         globalContext: true,
 
         globalContextType: selector,
+
+        globalRenderingRole: classifyGlobalRenderingRole(winner),
 
         renderRelevant: true,
 
@@ -5782,6 +5896,48 @@
       (dep) => dep.dependencyType === "global-rendering",
     );
 
+    /*
+     * V2.4.3-B
+     *
+     * Global rendering role statistics.
+     */
+
+    const globalResetDependencies = globalDependencies.filter(
+      (dep) => dep.globalRenderingRole === "global-reset",
+    );
+
+    const globalInheritedDependencies = globalDependencies.filter(
+      (dep) => dep.globalRenderingRole === "global-inherited",
+    );
+
+    const globalLayoutDependencies = globalDependencies.filter(
+      (dep) => dep.globalRenderingRole === "global-layout",
+    );
+
+    const globalContextDependenciesByRole = globalDependencies.filter(
+      (dep) => dep.globalRenderingRole === "global-context",
+    );
+
+    console.log(
+      "[WCX UNCLASSIFIED GLOBAL ROLES]",
+      globalDependencies
+        .filter(
+          (dep) =>
+            ![
+              "global-reset",
+              "global-inherited",
+              "global-layout",
+              "global-context",
+            ].includes(dep.globalRenderingRole),
+        )
+        .map((dep) => ({
+          selector: dep.selector,
+          property: dep.property,
+          value: dep.value,
+          globalRenderingRole: dep.globalRenderingRole,
+        })),
+    );
+
     const componentDependencies = renderingDependencies.filter(
       (dep) => dep.dependencyType === "component-rendering",
     );
@@ -5894,6 +6050,14 @@
         responsiveMediaSupportsDependencies: mediaSupportsDependencies.length,
 
         globalDependencies: globalDependencies.length,
+
+        globalResetDependencies: globalResetDependencies.length,
+
+        globalInheritedDependencies: globalInheritedDependencies.length,
+
+        globalLayoutDependencies: globalLayoutDependencies.length,
+
+        globalContextDependencies: globalContextDependenciesByRole.length,
 
         componentDependencies: componentDependencies.length,
 
