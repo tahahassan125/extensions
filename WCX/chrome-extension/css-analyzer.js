@@ -4911,6 +4911,16 @@
     };
   }
 
+  function isGlobalContextSelector(selector) {
+    const normalized = safeString(selector).trim();
+
+    if (!normalized) {
+      return false;
+    }
+
+    return normalized === "html" || normalized === "body";
+  }
+
   /* =========================================================
      DEPENDENCY CLASSIFICATION
   ========================================================= */
@@ -5048,6 +5058,58 @@
       Array.isArray(dependency?.stateDependencies) &&
       dependency.stateDependencies.length > 0
     );
+  }
+
+  function buildGlobalContextDependencies(ancestorWinners, root) {
+    const dependencies = [];
+
+    for (const winner of safeArray(ancestorWinners)) {
+      if (!winner?.element) {
+        continue;
+      }
+
+      const selector = safeString(winner.selector).trim();
+
+      if (!isGlobalContextSelector(selector)) {
+        continue;
+      }
+
+      dependencies.push({
+        ...winner,
+
+        dependencyType: "global-rendering",
+
+        globalContext: true,
+
+        globalContextType: selector,
+
+        renderRelevant: true,
+
+        elementLabel: safeString(winner.elementLabel),
+
+        matchedElementLabels: safeArray(winner.matchedElementLabels),
+
+        matchedElementDetails: safeArray(winner.matchedElementDetails),
+
+        selector,
+
+        originalSelector: safeString(winner.originalSelector),
+
+        cssText: safeString(
+          winner.cssText || winner.declaration?.rule?.cssText,
+        ),
+
+        stylesheetHref: safeString(winner.stylesheetHref),
+
+        stylesheetTitle: safeString(winner.stylesheetTitle),
+
+        stylesheetFramework: safeString(winner.stylesheetFramework),
+
+        variableReferences: safeArray(winner.variableReferences),
+      });
+    }
+
+    return dependencies;
   }
 
   function buildRenderingDependencies(winners, root) {
@@ -5584,6 +5646,19 @@
     );
 
     /*
+     * V2.4.2
+     *
+     * Add global rendering context dependencies discovered
+     * from the actual ancestor cascade.
+     */
+    const globalContextDependencies = buildGlobalContextDependencies(
+      ancestorCascade.winners,
+      root,
+    );
+
+    renderingDependencies.push(...globalContextDependencies);
+
+    /*
      * Deduplicate equivalent dependencies.
      */
 
@@ -5711,11 +5786,20 @@
       (dep) => dep.dependencyType === "component-rendering",
     );
 
-    const descendantDependencies = renderingDependencies.filter((dep) =>
-      safeArray(dep.matchedElementLabels).some(
+    const descendantDependencies = renderingDependencies.filter((dep) => {
+      /*
+       * Global context dependencies belong to the page/ancestor
+       * rendering context, not to the selected component's
+       * descendant dependency group.
+       */
+      if (dep.globalContext === true) {
+        return false;
+      }
+
+      return safeArray(dep.matchedElementLabels).some(
         (label) => label !== getNodeLabel(root),
-      ),
-    );
+      );
+    });
 
     const variableDependencies = renderingDependencies.filter(
       (dep) => safeArray(dep.variableReferences).length,
