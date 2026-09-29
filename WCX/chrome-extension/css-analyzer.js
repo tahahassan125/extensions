@@ -5195,8 +5195,6 @@
 
         globalContextType: selector,
 
-   
-
         globalRenderingRole: classifyGlobalRenderingRole(winner),
 
         renderRelevant: true,
@@ -5233,6 +5231,11 @@
       const matchedElementLabels = safeArray(winner.matchedElementLabels);
 
       const dependencyType = classifyDependency(winner, root);
+
+      const globalRenderingRole =
+        dependencyType === "global-rendering"
+          ? classifyGlobalRenderingRole(winner)
+          : null;
 
       const responsiveMetadata = getResponsiveMetadata(winner);
 
@@ -5285,6 +5288,8 @@
         ...responsiveMetadata,
 
         dependencyType,
+
+        globalRenderingRole,
 
         /*
          * V2.3.2-B
@@ -5774,6 +5779,8 @@
 
     renderingDependencies.push(...globalContextDependencies);
 
+    
+
     /*
      * Deduplicate equivalent dependencies.
      */
@@ -5918,26 +5925,6 @@
 
     const globalContextDependenciesByRole = globalDependencies.filter(
       (dep) => dep.globalRenderingRole === "global-context",
-    );
-
-    console.log(
-      "[WCX UNCLASSIFIED GLOBAL ROLES]",
-      globalDependencies
-        .filter(
-          (dep) =>
-            ![
-              "global-reset",
-              "global-inherited",
-              "global-layout",
-              "global-context",
-            ].includes(dep.globalRenderingRole),
-        )
-        .map((dep) => ({
-          selector: dep.selector,
-          property: dep.property,
-          value: dep.value,
-          globalRenderingRole: dep.globalRenderingRole,
-        })),
     );
 
     const componentDependencies = renderingDependencies.filter(

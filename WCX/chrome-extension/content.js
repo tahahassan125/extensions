@@ -1105,6 +1105,8 @@ function showCSSAnalysisResult(result) {
 
         dependencyType: safeString(dependency.dependencyType),
 
+        globalRenderingRole: safeString(dependency.globalRenderingRole),
+
         matchedElements: new Set(),
 
         declarations: [],
@@ -1266,6 +1268,14 @@ function showCSSAnalysisResult(result) {
 
     ["Global Dependencies", summary.globalDependencies ?? 0],
 
+    ["Global Reset", summary.globalResetDependencies ?? 0],
+
+    ["Global Inherited", summary.globalInheritedDependencies ?? 0],
+
+    ["Global Layout", summary.globalLayoutDependencies ?? 0],
+
+    ["Global Context", summary.globalContextDependencies ?? 0],
+
     ["Component Dependencies", summary.componentDependencies ?? 0],
 
     ["Descendant Dependencies", summary.descendantDependencies ?? 0],
@@ -1398,6 +1408,17 @@ function showCSSAnalysisResult(result) {
                     Type:
                     ${escapeHTML(group.dependencyType || "rendering")}
                 </span>
+                ${
+  group.globalRenderingRole
+    ? `
+        <span class="wcx-css-badge">
+            Role:
+            ${escapeHTML(group.globalRenderingRole)}
+        </span>
+      `
+    : ""
+}
+                
 
                 <span class="wcx-css-badge">
                     Framework:
