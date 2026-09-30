@@ -1136,6 +1136,8 @@ function showCSSAnalysisResult(result) {
 
       important: declaration.important === true,
 
+      globalRenderingRole: safeString(declaration.globalRenderingRole),
+
       status: statusOverride || safeString(declaration.status) || "candidate",
 
       specificity: declaration.specificity,
@@ -1165,6 +1167,18 @@ function showCSSAnalysisResult(result) {
       responsiveActive: declaration.responsiveActive,
     });
   }
+
+  console.log(
+    "[WCX GLOBAL ROLE DIAGNOSTIC]",
+    dependencies
+      .filter((dependency) => dependency.dependencyType === "global-rendering")
+      .map((dependency) => ({
+        selector: dependency.selector,
+        property: dependency.property,
+        value: dependency.value,
+        globalRenderingRole: dependency.globalRenderingRole,
+      })),
+  );
 
   /*
    * First add current winning dependencies.
@@ -1409,15 +1423,15 @@ function showCSSAnalysisResult(result) {
                     ${escapeHTML(group.dependencyType || "rendering")}
                 </span>
                 ${
-  group.globalRenderingRole
-    ? `
+                  group.globalRenderingRole
+                    ? `
         <span class="wcx-css-badge">
             Role:
             ${escapeHTML(group.globalRenderingRole)}
         </span>
       `
-    : ""
-}
+                    : ""
+                }
                 
 
                 <span class="wcx-css-badge">
@@ -1507,6 +1521,16 @@ function showCSSAnalysisResult(result) {
                         </div>
 
                         <div class="wcx-css-declaration-meta">
+                           ${
+                             declaration.globalRenderingRole
+                               ? `
+                               <span>
+                               Role:
+                               ${escapeHTML(declaration.globalRenderingRole)}
+                               </span>
+                               `
+                               : ""
+                              } 
 
                             <span>
                                 Specificity:
