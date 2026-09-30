@@ -1168,7 +1168,6 @@ function showCSSAnalysisResult(result) {
     });
   }
 
-
   /*
    * First add current winning dependencies.
    */
@@ -1354,6 +1353,16 @@ function showCSSAnalysisResult(result) {
 
       card.className = "wcx-css-rule-card";
 
+      if (group.dependencyType === "global-rendering") {
+        card.classList.add("wcx-css-global-rule-card");
+
+        if (group.globalRenderingRole) {
+          card.classList.add(
+            `wcx-css-global-role-${group.globalRenderingRole}`,
+          );
+        }
+      }
+
       /*
        * ----------------------------------------------------
        * Rule header
@@ -1414,11 +1423,11 @@ function showCSSAnalysisResult(result) {
                 ${
                   group.globalRenderingRole
                     ? `
-        <span class="wcx-css-badge">
-            Role:
-            ${escapeHTML(group.globalRenderingRole)}
-        </span>
-      `
+                    <span class="wcx-css-badge">
+                    Role:
+                    ${escapeHTML(group.globalRenderingRole)}
+                    </span>
+                    `
                     : ""
                 }
                 
@@ -1519,7 +1528,7 @@ function showCSSAnalysisResult(result) {
                                </span>
                                `
                                : ""
-                              } 
+                           } 
 
                             <span>
                                 Specificity:
