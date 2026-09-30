@@ -1168,17 +1168,6 @@ function showCSSAnalysisResult(result) {
     });
   }
 
-  console.log(
-    "[WCX GLOBAL ROLE DIAGNOSTIC]",
-    dependencies
-      .filter((dependency) => dependency.dependencyType === "global-rendering")
-      .map((dependency) => ({
-        selector: dependency.selector,
-        property: dependency.property,
-        value: dependency.value,
-        globalRenderingRole: dependency.globalRenderingRole,
-      })),
-  );
 
   /*
    * First add current winning dependencies.
