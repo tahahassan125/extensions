@@ -1756,3 +1756,25 @@
 .wcx-css-global-role-global-context {
   border-left-color: #d97706;
 }
+
+
+/* ============================================================
+ * WCX V2.4.5
+ * Global Role Header Highlight
+ * ============================================================ */
+
+.wcx-css-global-role-global-reset .wcx-css-rule-header {
+  background: #f8f5ff;
+}
+
+.wcx-css-global-role-global-inherited .wcx-css-rule-header {
+  background: #f4f8ff;
+}
+
+.wcx-css-global-role-global-layout .wcx-css-rule-header {
+  background: #f3faf7;
+}
+
+.wcx-css-global-role-global-context .wcx-css-rule-header {
+  background: #fff8ef;
+}
