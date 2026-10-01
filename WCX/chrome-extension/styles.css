@@ -1730,3 +1730,29 @@
         grid-template-columns: 1fr;
     }
 }
+
+
+/* ============================================================
+ * WCX V2.4.5
+ * Global Rendering Dependency Cards
+ * ============================================================ */
+
+.wcx-css-global-rule-card {
+  border-left: 4px solid;
+}
+/* Global Reset */
+.wcx-css-global-role-global-reset {
+  border-left-color: #7c3aed;
+}
+/* Global Inherited */
+.wcx-css-global-role-global-inherited {
+  border-left-color: #2563eb;
+}
+/* Global Layout */
+.wcx-css-global-role-global-layout {
+  border-left-color: #059669;
+}
+/* Global Context */
+.wcx-css-global-role-global-context {
+  border-left-color: #d97706;
+}
