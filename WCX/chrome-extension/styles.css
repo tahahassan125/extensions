@@ -1778,3 +1778,17 @@
 .wcx-css-global-role-global-context .wcx-css-rule-header {
   background: #fff8ef;
 }
+
+
+/* ============================================================
+ * WCX V2.4.5
+ * Mixed Global Role Card
+ * ============================================================ */
+
+.wcx-css-global-role-mixed {
+  border-left: 4px solid #6b7280;
+}
+
+.wcx-css-global-role-mixed .wcx-css-rule-header {
+  background: #f7f7f7;
+}

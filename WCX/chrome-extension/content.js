@@ -1364,10 +1364,19 @@ function showCSSAnalysisResult(result) {
       if (group.dependencyType === "global-rendering") {
         card.classList.add("wcx-css-global-rule-card");
 
-        if (group.globalRenderingRole) {
-          card.classList.add(
-            `wcx-css-global-role-${group.globalRenderingRole}`,
-          );
+        const globalRoles =
+          group.globalRenderingRoles && group.globalRenderingRoles.size
+            ? Array.from(group.globalRenderingRoles)
+            : group.globalRenderingRole
+              ? [group.globalRenderingRole]
+              : [];
+
+        for (const role of globalRoles) {
+          card.classList.add(`wcx-css-global-role-${role}`);
+        }
+
+        if (globalRoles.length > 1) {
+          card.classList.add("wcx-css-global-role-mixed");
         }
       }
 
@@ -1429,14 +1438,21 @@ function showCSSAnalysisResult(result) {
                     ${escapeHTML(group.dependencyType || "rendering")}
                 </span>
                 ${
-                  group.globalRenderingRole
+                  group.globalRenderingRoles && group.globalRenderingRoles.size
                     ? `
                     <span class="wcx-css-badge">
-                    Role:
-                    ${escapeHTML(group.globalRenderingRole)}
+                    Roles:
+                    ${escapeHTML(Array.from(group.globalRenderingRoles).join(", "))}
                     </span>
                     `
-                    : ""
+                    : group.globalRenderingRole
+                      ? `
+                      <span class="wcx-css-badge">     
+                      Role:
+                       ${escapeHTML(group.globalRenderingRole)}        
+                       </span>  
+                       `
+                      : ""
                 }
                 
 
