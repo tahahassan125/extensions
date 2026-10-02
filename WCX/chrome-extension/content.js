@@ -1107,6 +1107,8 @@ function showCSSAnalysisResult(result) {
 
         globalRenderingRole: safeString(dependency.globalRenderingRole),
 
+        globalRenderingRoles: new Set(),
+
         matchedElements: new Set(),
 
         declarations: [],
@@ -1128,6 +1130,12 @@ function showCSSAnalysisResult(result) {
     labels.forEach((label) => {
       group.matchedElements.add(label);
     });
+
+    const globalRenderingRole = safeString(declaration.globalRenderingRole);
+
+    if (globalRenderingRole) {
+      group.globalRenderingRoles.add(globalRenderingRole);
+    }
 
     group.declarations.push({
       property: safeString(declaration.property),
