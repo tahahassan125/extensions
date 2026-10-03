@@ -2500,6 +2500,73 @@
     return "Unknown";
   }
 
+  function detectFrameworkEvidence(href, cssText, title) {
+    const source = (
+      safeString(href) +
+      " " +
+      safeString(cssText) +
+      " " +
+      safeString(title)
+    ).toLowerCase();
+
+    const evidence = [];
+
+    /*
+     * Bootstrap
+     */
+    if (source.includes("bootstrap")) {
+      evidence.push("bootstrap-signature");
+    }
+
+    /*
+     * Tailwind
+     */
+    if (source.includes("tailwind")) {
+      evidence.push("tailwind-signature");
+    }
+
+    /*
+     * Foundation
+     */
+    if (source.includes("foundation")) {
+      evidence.push("foundation-signature");
+    }
+
+    /*
+     * Bulma
+     */
+    if (source.includes("bulma")) {
+      evidence.push("bulma-signature");
+    }
+
+    /*
+     * Materialize
+     */
+    if (source.includes("materialize")) {
+      evidence.push("materialize-signature");
+    }
+
+    /*
+     * Mobirise
+     */
+    if (source.includes("mobirise") || source.includes("mbr-")) {
+      evidence.push("mobirise-signature");
+    }
+
+    const framework = detectFramework(href, cssText);
+
+    return {
+      framework,
+
+      evidence,
+
+      evidenceCount: evidence.length,
+
+      confidence:
+        evidence.length >= 2 ? "high" : evidence.length === 1 ? "low" : "none",
+    };
+  }
+
   function getPageStylesheets() {
     const stylesheets = [];
 
@@ -2523,8 +2590,6 @@
         href = "";
       }
 
-      const framework = detectFramework(href, "");
-
       let title = "";
 
       try {
@@ -2532,6 +2597,10 @@
       } catch (error) {
         title = "";
       }
+
+      const frameworkDetection = detectFrameworkEvidence(href, "", title);
+
+      const framework = frameworkDetection.framework;
 
       stylesheets.push({
         index,
@@ -2541,6 +2610,12 @@
         title,
 
         framework,
+
+        frameworkEvidence: frameworkDetection.evidence,
+
+        frameworkEvidenceCount: frameworkDetection.evidenceCount,
+
+        frameworkConfidence: frameworkDetection.confidence,
 
         accessible: !blocked && !!cssRules,
 
@@ -5778,8 +5853,6 @@
     );
 
     renderingDependencies.push(...globalContextDependencies);
-
-    
 
     /*
      * Deduplicate equivalent dependencies.
