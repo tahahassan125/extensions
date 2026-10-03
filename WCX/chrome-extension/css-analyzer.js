@@ -2511,11 +2511,22 @@
 
     const evidence = [];
 
-    /*
+        /*
      * Bootstrap
      */
     if (source.includes("bootstrap")) {
       evidence.push("bootstrap-signature");
+    }
+
+    if (
+      source.includes("--bs-") ||
+      source.includes(".container") ||
+      source.includes(".row") ||
+      source.includes(".col-") ||
+      source.includes(".navbar") ||
+      source.includes(".btn")
+    ) {
+      evidence.push("bootstrap-css-fingerprint");
     }
 
     /*
@@ -2567,6 +2578,21 @@
     };
   }
 
+  function getStylesheetCSSContent(cssRules) {
+    if (!cssRules) {
+      return "";
+    }
+
+    try {
+      return Array.from(cssRules)
+        .map((rule) => safeString(rule?.cssText))
+        .filter(Boolean)
+        .join("\n");
+    } catch (error) {
+      return "";
+    }
+  }
+
   function getPageStylesheets() {
     const stylesheets = [];
 
@@ -2598,7 +2624,13 @@
         title = "";
       }
 
-      const frameworkDetection = detectFrameworkEvidence(href, "", title);
+      const cssContent = getStylesheetCSSContent(cssRules);
+
+      const frameworkDetection = detectFrameworkEvidence(
+        href,
+        cssContent,
+        title,
+      );
 
       const framework = frameworkDetection.framework;
 
