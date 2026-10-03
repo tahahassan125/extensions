@@ -2511,7 +2511,7 @@
 
     const evidence = [];
 
-        /*
+    /*
      * Bootstrap
      */
     if (source.includes("bootstrap")) {
@@ -2564,17 +2564,30 @@
       evidence.push("mobirise-signature");
     }
 
+    const frameworkEvidenceCount = evidence.length;
+
+    const frameworkConfidence =
+      frameworkEvidenceCount >= 2
+        ? "high"
+        : frameworkEvidenceCount === 1
+          ? "low"
+          : "none";
+
     const framework = detectFramework(href, cssText);
+
+    const frameworkAttribution =
+      frameworkConfidence === "high" ? framework : null;
 
     return {
       framework,
 
       evidence,
 
-      evidenceCount: evidence.length,
+      evidenceCount: frameworkEvidenceCount,
 
-      confidence:
-        evidence.length >= 2 ? "high" : evidence.length === 1 ? "low" : "none",
+      confidence: frameworkConfidence,
+
+      frameworkAttribution,
     };
   }
 
@@ -2634,6 +2647,8 @@
 
       const framework = frameworkDetection.framework;
 
+      const frameworkAttribution = frameworkDetection.frameworkAttribution;
+
       stylesheets.push({
         index,
 
@@ -2648,6 +2663,8 @@
         frameworkEvidenceCount: frameworkDetection.evidenceCount,
 
         frameworkConfidence: frameworkDetection.confidence,
+
+        frameworkAttribution,
 
         accessible: !blocked && !!cssRules,
 
@@ -6097,6 +6114,7 @@
 
     return {
       version: VERSION,
+      stylesheets,
 
       root: {
         tagName: root.tagName.toLowerCase(),
