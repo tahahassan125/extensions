@@ -886,6 +886,71 @@ function analyzeSelectedCSS(data) {
 
   try {
     result = window.WCX_CSS.analyzeRenderingDependencies(element);
+
+      console.log(
+    "🧪 WCX FRAMEWORK CLASSIFICATION TEST:",
+    result.dependencies.map((d, i) => ({
+      i,
+      selector: d.selector,
+      property: d.property,
+      dependencyType: d.dependencyType,
+      stylesheetFramework: d.stylesheetFramework,
+      frameworkAttribution: d.frameworkAttribution,
+    })),
+  );
+
+  console.log(
+    "🧪 WCX CUSTOM CSS ATTRIBUTION TEST:",
+    result.dependencies
+      .filter((d) =>
+        [
+          ".ticker-wrapper-h",
+          ".news-ticker-h",
+          "a",
+          "p",
+        ].includes(d.selector),
+      )
+      .map((d) => ({
+        selector: d.selector,
+        property: d.property,
+        dependencyType: d.dependencyType,
+        stylesheetFramework: d.stylesheetFramework,
+        frameworkAttribution: d.frameworkAttribution,
+      })),
+  );
+
+  console.log(
+  "🧪 WCX FRAMEWORK ATTRIBUTED TEST:",
+  result.dependencies
+    .filter((d) => d.frameworkAttribution)
+    .map((d) => ({
+      selector: d.selector,
+      property: d.property,
+      dependencyType: d.dependencyType,
+      stylesheetFramework: d.stylesheetFramework,
+      frameworkAttribution: d.frameworkAttribution,
+    })),
+);
+
+console.log(
+  "🧪 WCX CUSTOM.CSS ATTRIBUTION TEST:",
+  result.dependencies
+    .filter((d) =>
+      d.stylesheetHref?.includes("custome.css")
+    )
+    .map((d) => ({
+      selector: d.selector,
+      property: d.property,
+      dependencyType: d.dependencyType,
+      stylesheetFramework: d.stylesheetFramework,
+      frameworkAttribution: d.frameworkAttribution,
+    })),
+);
+
+
+
+
+
   } catch (error) {
     console.error("🔥 WCX CSS V2 ANALYSIS ERROR:", error);
 

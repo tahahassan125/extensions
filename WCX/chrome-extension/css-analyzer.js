@@ -2378,6 +2378,8 @@
 
             stylesheetFramework: stylesheetMeta.framework,
 
+            frameworkAttribution: stylesheetMeta.frameworkAttribution,
+
             ruleIndex: index,
 
             sourceOrder: output.length,
@@ -2500,6 +2502,42 @@
     return "Unknown";
   }
 
+  function hasStrongFrameworkSignature(framework, href, cssText, title) {
+    const source = (
+      safeString(href) +
+      " " +
+      safeString(cssText) +
+      " " +
+      safeString(title)
+    ).toLowerCase();
+
+    switch (framework) {
+      case "Bootstrap":
+        return (
+          source.includes("getbootstrap.com") ||
+          source.includes("bootstrap.min.css")
+        );
+
+      case "Tailwind":
+        return source.includes("tailwind");
+
+      case "Foundation":
+        return source.includes("foundation");
+
+      case "Bulma":
+        return source.includes("bulma");
+
+      case "Materialize":
+        return source.includes("materialize");
+
+      case "Mobirise":
+        return source.includes("mobirise") || source.includes("mbr-");
+
+      default:
+        return false;
+    }
+  }
+
   function detectFrameworkEvidence(href, cssText, title) {
     const source = (
       safeString(href) +
@@ -2575,8 +2613,14 @@
 
     const framework = detectFramework(href, cssText);
 
-    const frameworkAttribution =
-      frameworkConfidence === "high" ? framework : null;
+    const frameworkAttribution = hasStrongFrameworkSignature(
+      framework,
+      href,
+      cssText,
+      title,
+    )
+      ? framework
+      : null;
 
     return {
       framework,
@@ -3938,6 +3982,15 @@
 
           stylesheetFramework: winner.stylesheetFramework,
 
+          /*
+           * V2.5
+           * Preserve framework attribution from cascade winner.
+           */
+          frameworkAttribution:
+            winner.frameworkAttribution ??
+            winner.rule?.frameworkAttribution ??
+            null,
+
           ruleIndex: winner.ruleIndex,
 
           sourceOrder: winner.sourceOrder,
@@ -5052,6 +5105,8 @@
   function classifyDependency(winner, root) {
     const selector = safeString(winner.selector).trim();
 
+    const frameworkAttribution = safeString(winner.frameworkAttribution).trim();
+
     /*
      * V2.4.1
      *
@@ -5073,7 +5128,7 @@
      * selected component remain component-rendering.
      * Other framework rules remain framework-rendering.
      */
-    if (winner.stylesheetFramework !== "Unknown") {
+    if (frameworkAttribution) {
       if (
         selector.includes(root.tagName.toLowerCase()) ||
         (root.id && selector.includes(`#${root.id}`))
@@ -6111,7 +6166,9 @@
 
       0,
     );
-
+    window.__WCX_LAST_CSS_ANALYSIS = {
+      dependencies: renderingDependencies,
+    };
     return {
       version: VERSION,
       stylesheets,
