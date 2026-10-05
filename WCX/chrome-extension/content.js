@@ -887,70 +887,60 @@ function analyzeSelectedCSS(data) {
   try {
     result = window.WCX_CSS.analyzeRenderingDependencies(element);
 
-      console.log(
-    "🧪 WCX FRAMEWORK CLASSIFICATION TEST:",
-    result.dependencies.map((d, i) => ({
-      i,
-      selector: d.selector,
-      property: d.property,
-      dependencyType: d.dependencyType,
-      stylesheetFramework: d.stylesheetFramework,
-      frameworkAttribution: d.frameworkAttribution,
-    })),
-  );
-
-  console.log(
-    "🧪 WCX CUSTOM CSS ATTRIBUTION TEST:",
-    result.dependencies
-      .filter((d) =>
-        [
-          ".ticker-wrapper-h",
-          ".news-ticker-h",
-          "a",
-          "p",
-        ].includes(d.selector),
-      )
-      .map((d) => ({
+    console.log(
+      "🧪 WCX FRAMEWORK CLASSIFICATION TEST:",
+      result.dependencies.map((d, i) => ({
+        i,
         selector: d.selector,
         property: d.property,
         dependencyType: d.dependencyType,
         stylesheetFramework: d.stylesheetFramework,
         frameworkAttribution: d.frameworkAttribution,
       })),
-  );
+    );
 
-  console.log(
-  "🧪 WCX FRAMEWORK ATTRIBUTED TEST:",
-  result.dependencies
-    .filter((d) => d.frameworkAttribution)
-    .map((d) => ({
-      selector: d.selector,
-      property: d.property,
-      dependencyType: d.dependencyType,
-      stylesheetFramework: d.stylesheetFramework,
-      frameworkAttribution: d.frameworkAttribution,
-    })),
-);
+    console.log(
+      "🧪 WCX CUSTOM CSS ATTRIBUTION TEST:",
+      result.dependencies
+        .filter((d) =>
+          [".ticker-wrapper-h", ".news-ticker-h", "a", "p"].includes(
+            d.selector,
+          ),
+        )
+        .map((d) => ({
+          selector: d.selector,
+          property: d.property,
+          dependencyType: d.dependencyType,
+          stylesheetFramework: d.stylesheetFramework,
+          frameworkAttribution: d.frameworkAttribution,
+        })),
+    );
 
-console.log(
-  "🧪 WCX CUSTOM.CSS ATTRIBUTION TEST:",
-  result.dependencies
-    .filter((d) =>
-      d.stylesheetHref?.includes("custome.css")
-    )
-    .map((d) => ({
-      selector: d.selector,
-      property: d.property,
-      dependencyType: d.dependencyType,
-      stylesheetFramework: d.stylesheetFramework,
-      frameworkAttribution: d.frameworkAttribution,
-    })),
-);
+    console.log(
+      "🧪 WCX FRAMEWORK ATTRIBUTED TEST:",
+      result.dependencies
+        .filter((d) => d.frameworkAttribution)
+        .map((d) => ({
+          selector: d.selector,
+          property: d.property,
+          dependencyType: d.dependencyType,
+          stylesheetFramework: d.stylesheetFramework,
+          frameworkAttribution: d.frameworkAttribution,
+        })),
+    );
 
-
-
-
-
+    console.log(
+      "🧪 WCX CUSTOM.CSS ATTRIBUTION TEST:",
+      result.dependencies
+        .filter((d) => d.stylesheetHref?.includes("custome.css"))
+        .map((d) => ({
+          selector: d.selector,
+          property: d.property,
+          dependencyType: d.dependencyType,
+          stylesheetFramework: d.stylesheetFramework,
+          frameworkAttribution: d.frameworkAttribution,
+        })),
+    );
   } catch (error) {
     console.error("🔥 WCX CSS V2 ANALYSIS ERROR:", error);
 
@@ -1151,6 +1141,12 @@ function showCSSAnalysisResult(result) {
         ),
 
         framework: safeString(dependency.stylesheetFramework) || "Unknown",
+
+        frameworkAttribution: safeString(dependency.frameworkAttribution),
+
+        frameworkConfidence: safeString(dependency.frameworkConfidence),
+
+        frameworkEvidence: safeArray(dependency.frameworkEvidence),
 
         stylesheetIndex: dependency.stylesheetIndex,
 
@@ -1522,9 +1518,45 @@ function showCSSAnalysisResult(result) {
                 
 
                 <span class="wcx-css-badge">
-                    Framework:
+                    Detected Framework:
                     ${escapeHTML(group.framework || "Unknown")}
                 </span>
+
+                ${
+                  group.frameworkAttribution
+                    ? `
+      <span class="wcx-css-badge">
+        Attribution:
+        ${escapeHTML(group.frameworkAttribution)}
+      </span>
+    `
+                    : ""
+                }
+
+${
+  group.frameworkConfidence
+    ? `
+      <span class="wcx-css-badge">
+        Confidence:
+        ${escapeHTML(group.frameworkConfidence)}
+      </span>
+    `
+    : ""
+}
+
+${
+  group.frameworkEvidence.length
+    ? `
+      <span class="wcx-css-badge">
+        Evidence:
+        ${escapeHTML(group.frameworkEvidence.join(", "))}
+      </span>
+    `
+    : ""
+}
+
+
+
 
                 ${
                   group.media
