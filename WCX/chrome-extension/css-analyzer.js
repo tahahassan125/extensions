@@ -5120,36 +5120,37 @@
     if (selector === "*" || selector === "html" || selector === "body") {
       return "global-rendering";
     }
+    /*
+     * V2.5.1
+     *
+     * Determine whether this selector actually targets
+     * the selected root element.
+     *
+     * Use the actual selector-matching result instead
+     * of inspecting selector text for the root tag name.
+     */
+    const rootLabel = getNodeLabel(root);
 
+    const matchedElementLabels = safeArray(winner.matchedElementLabels);
+
+    const targetsRoot = matchedElementLabels.includes(rootLabel);
+
+    if (targetsRoot) {
+      return "component-rendering";
+    }
     /*
      * Framework rendering dependency.
      *
-     * Framework rules that specifically target the
-     * selected component remain component-rendering.
-     * Other framework rules remain framework-rendering.
+     * Root-targeting framework rules have already been
+     * classified as component-rendering above.
      */
     if (frameworkAttribution) {
-      if (
-        selector.includes(root.tagName.toLowerCase()) ||
-        (root.id && selector.includes(`#${root.id}`))
-      ) {
-        return "component-rendering";
-      }
-
       return "framework-rendering";
     }
 
     /*
-     * Non-framework rules targeting the selected
-     * component.
+     * Generic rendering dependency.
      */
-    if (
-      (root.id && selector.includes(`#${root.id}`)) ||
-      selector.includes(root.tagName.toLowerCase())
-    ) {
-      return "component-rendering";
-    }
-
     return "generic-rendering";
   }
 
@@ -6110,11 +6111,14 @@
 
     const descendantDependencies = renderingDependencies.filter((dep) => {
       /*
-       * Global context dependencies belong to the page/ancestor
+       * Global rendering dependencies belong to the page
        * rendering context, not to the selected component's
        * descendant dependency group.
        */
-      if (dep.globalContext === true) {
+      if (
+        dep.dependencyType === "global-rendering" ||
+        dep.globalContext === true
+      ) {
         return false;
       }
 
