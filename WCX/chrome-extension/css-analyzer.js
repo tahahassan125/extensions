@@ -2332,6 +2332,29 @@
 
           const declarations = getStyleDeclarations(rule.style, rule.cssText);
 
+          const frameworkAttributionEvidence =
+            getRuleFrameworkAttributionEvidence(
+              stylesheetMeta.framework,
+              selector,
+              rule.cssText,
+              stylesheetMeta.href,
+              stylesheetMeta.title,
+            );
+
+          const frameworkAttribution = getRuleFrameworkAttribution(
+            stylesheetMeta.framework,
+            selector,
+            rule.cssText,
+            stylesheetMeta.href,
+            stylesheetMeta.title,
+          );
+
+          const frameworkAttributionConfidence =
+            getRuleFrameworkAttributionConfidence(
+              frameworkAttribution,
+              frameworkAttributionEvidence,
+            );
+
           /*
            * V2.3.2-A5
            *
@@ -2378,13 +2401,11 @@
 
             stylesheetFramework: stylesheetMeta.framework,
 
-            frameworkAttribution: getRuleFrameworkAttribution(
-              stylesheetMeta.framework,
-              selector,
-              rule.cssText,
-              stylesheetMeta.href,
-              stylesheetMeta.title,
-            ),
+            frameworkAttribution,
+
+            frameworkAttributionEvidence,
+
+            frameworkAttributionConfidence,
 
             ruleIndex: index,
 
@@ -2849,52 +2870,44 @@
   }
 
   function getRuleFrameworkAttributionConfidence(
-  frameworkAttribution,
-  evidence = [],
-) {
-  if (!frameworkAttribution) {
-    return "none";
-  }
-
-  const evidenceList = Array.isArray(evidence)
-    ? evidence
-    : [];
-
-  if (!evidenceList.length) {
-    return "none";
-  }
-
-  /*
-   * Strong rule-level fingerprints
-   */
-  const strongEvidence = new Set([
-    "bootstrap-css-fingerprint",
-    "bootstrap-base-rule-fingerprint",
-    "foundation-css-fingerprint",
-    "bulma-css-fingerprint",
-    "materialize-css-fingerprint",
-    "mobirise-css-fingerprint",
-  ]);
-
-  if (
-    evidenceList.some((item) =>
-      strongEvidence.has(item),
-    )
+    frameworkAttribution,
+    evidence = [],
   ) {
-    return "strong";
-  }
+    if (!frameworkAttribution) {
+      return "none";
+    }
 
-  /*
-   * Framework component / utility selector evidence
-   */
-  if (
-    evidenceList.includes("bootstrap-component-selector")
-  ) {
-    return "medium";
-  }
+    const evidenceList = Array.isArray(evidence) ? evidence : [];
 
-  return "weak";
-}
+    if (!evidenceList.length) {
+      return "none";
+    }
+
+    /*
+     * Strong rule-level fingerprints
+     */
+    const strongEvidence = new Set([
+      "bootstrap-css-fingerprint",
+      "bootstrap-base-rule-fingerprint",
+      "foundation-css-fingerprint",
+      "bulma-css-fingerprint",
+      "materialize-css-fingerprint",
+      "mobirise-css-fingerprint",
+    ]);
+
+    if (evidenceList.some((item) => strongEvidence.has(item))) {
+      return "strong";
+    }
+
+    /*
+     * Framework component / utility selector evidence
+     */
+    if (evidenceList.includes("bootstrap-component-selector")) {
+      return "medium";
+    }
+
+    return "weak";
+  }
 
   function hasStrongFrameworkSignature(framework, href, cssText, title) {
     const source = (
