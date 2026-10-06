@@ -6644,6 +6644,36 @@
     window.__WCX_LAST_CSS_ANALYSIS = {
       dependencies: renderingDependencies,
     };
+
+    console.table(
+      renderingDependencies
+        .filter((dep) => dep.frameworkAttribution)
+        .map((dep) => ({
+          selector: dep.selector,
+          property: dep.property,
+          framework: dep.frameworkAttribution,
+          evidence: Array.isArray(dep.frameworkAttributionEvidence)
+            ? dep.frameworkAttributionEvidence.join(", ")
+            : "",
+          confidence: dep.frameworkAttributionConfidence || "none",
+        })),
+    );
+
+    console.table(
+      renderingDependencies
+        .filter((dep) => !dep.frameworkAttribution)
+        .slice(0, 20)
+        .map((dep) => ({
+          selector: dep.selector,
+          property: dep.property,
+          framework: dep.stylesheetFramework,
+          attribution: dep.frameworkAttribution,
+          evidence: Array.isArray(dep.frameworkAttributionEvidence)
+            ? dep.frameworkAttributionEvidence.join(", ")
+            : "",
+          confidence: dep.frameworkAttributionConfidence || "none",
+        })),
+    );
     return {
       version: VERSION,
       stylesheets,
