@@ -2378,7 +2378,13 @@
 
             stylesheetFramework: stylesheetMeta.framework,
 
-            frameworkAttribution: stylesheetMeta.frameworkAttribution,
+            frameworkAttribution: getRuleFrameworkAttribution(
+              stylesheetMeta.framework,
+              selector,
+              rule.cssText,
+              stylesheetMeta.href,
+              stylesheetMeta.title,
+            ),
 
             ruleIndex: index,
 
@@ -2502,6 +2508,394 @@
     return "Unknown";
   }
 
+  function getRuleFrameworkAttributionEvidence(
+    framework,
+    selector,
+    cssText,
+    href = "",
+    title = "",
+  ) {
+    if (!framework || framework === "Unknown") {
+      return [];
+    }
+
+    const ruleSource = (
+      safeString(selector) +
+      " " +
+      safeString(cssText)
+    ).toLowerCase();
+
+    const evidence = [];
+
+    switch (framework) {
+      case "Bootstrap": {
+        /*
+         * Strong Bootstrap CSS fingerprints
+         */
+        if (
+          ruleSource.includes("--bs-") ||
+          ruleSource.includes(".navbar-") ||
+          ruleSource.includes(".container-") ||
+          ruleSource.includes(".col-")
+        ) {
+          evidence.push("bootstrap-css-fingerprint");
+        }
+
+        const selectorText = safeString(selector).trim();
+
+        /*
+         * Bootstrap base-element fingerprints
+         */
+        const bootstrapBaseRulePatterns = [
+          {
+            selector: /^html$/,
+            declarations: [
+              "line-height: 1.15",
+              "text-size-adjust: 100%",
+              "-webkit-tap-highlight-color: transparent",
+            ],
+          },
+
+          {
+            selector: /^body$/,
+            declarations: [
+              "margin: 0",
+              "font-family:",
+              "font-size: 1rem",
+              "font-weight: 400",
+              "line-height: 1.5",
+            ],
+          },
+
+          {
+            selector: /^\*$/,
+            declarations: ["box-sizing: border-box"],
+          },
+
+          {
+            selector: /^p$/,
+            declarations: ["margin-top: 0", "margin-bottom: 1rem"],
+          },
+
+          {
+            selector: /^a$/,
+            declarations: [
+              "background-color: transparent",
+              "text-decoration: none",
+            ],
+          },
+        ];
+
+        for (const pattern of bootstrapBaseRulePatterns) {
+          if (!pattern.selector.test(selectorText)) {
+            continue;
+          }
+
+          const matches = pattern.declarations.filter((declaration) =>
+            ruleSource.includes(declaration),
+          );
+
+          if (matches.length >= Math.min(2, pattern.declarations.length)) {
+            evidence.push("bootstrap-base-rule-fingerprint");
+            break;
+          }
+        }
+
+        /*
+         * Bootstrap component / utility selector fingerprints
+         */
+        if (
+          /\.container\b/.test(ruleSource) ||
+          /\.row\b/.test(ruleSource) ||
+          /\.btn\b/.test(ruleSource) ||
+          /\.nav-link\b/.test(ruleSource) ||
+          /\.navbar\b/.test(ruleSource)
+        ) {
+          evidence.push("bootstrap-component-selector");
+        }
+
+        break;
+      }
+
+      case "Tailwind":
+        /*
+         * Tailwind attribution remains conservative.
+         */
+        break;
+
+      case "Foundation":
+        if (
+          ruleSource.includes(".grid-x") ||
+          ruleSource.includes(".grid-y") ||
+          ruleSource.includes(".cell") ||
+          ruleSource.includes(".callout")
+        ) {
+          evidence.push("foundation-css-fingerprint");
+        }
+
+        break;
+
+      case "Bulma":
+        if (
+          ruleSource.includes(".columns") ||
+          ruleSource.includes(".column") ||
+          ruleSource.includes(".is-") ||
+          ruleSource.includes(".has-")
+        ) {
+          evidence.push("bulma-css-fingerprint");
+        }
+
+        break;
+
+      case "Materialize":
+        if (
+          ruleSource.includes(".row") ||
+          ruleSource.includes(".col.s") ||
+          ruleSource.includes(".btn")
+        ) {
+          evidence.push("materialize-css-fingerprint");
+        }
+
+        break;
+
+      case "Mobirise":
+        if (ruleSource.includes(".mbr-") || ruleSource.includes("mbr-")) {
+          evidence.push("mobirise-css-fingerprint");
+        }
+
+        break;
+    }
+
+    return [...new Set(evidence)];
+  }
+
+  function getRuleFrameworkAttribution(
+    framework,
+    selector,
+    cssText,
+    href = "",
+    title = "",
+  ) {
+    if (!framework || framework === "Unknown") {
+      return null;
+    }
+
+    const ruleSource = (
+      safeString(selector) +
+      " " +
+      safeString(cssText)
+    ).toLowerCase();
+
+    /*
+     * V2.5.3
+     *
+     * Rule-level framework attribution.
+     *
+     * IMPORTANT:
+     * stylesheet-level framework detection must NOT
+     * automatically attribute every rule to that framework.
+     */
+
+    switch (framework) {
+      case "Bootstrap": {
+        /*
+         * Strong Bootstrap rule fingerprints
+         */
+        if (
+          ruleSource.includes("--bs-") ||
+          ruleSource.includes(".navbar-") ||
+          ruleSource.includes(".container-") ||
+          ruleSource.includes(".col-")
+        ) {
+          return "Bootstrap";
+        }
+
+        /*
+         * Bootstrap base-element declarations.
+         *
+         * These combinations are much stronger than
+         * selector names alone.
+         */
+        const bootstrapBaseRulePatterns = [
+          {
+            selector: /^html$/,
+            declarations: [
+              "line-height: 1.15",
+              "text-size-adjust: 100%",
+              "-webkit-tap-highlight-color: transparent",
+            ],
+          },
+
+          {
+            selector: /^body$/,
+            declarations: [
+              "margin: 0",
+              "font-family:",
+              "font-size: 1rem",
+              "font-weight: 400",
+              "line-height: 1.5",
+            ],
+          },
+
+          {
+            selector: /^\*$/,
+            declarations: ["box-sizing: border-box"],
+          },
+
+          {
+            selector: /^p$/,
+            declarations: ["margin-top: 0", "margin-bottom: 1rem"],
+          },
+
+          {
+            selector: /^a$/,
+            declarations: [
+              "background-color: transparent",
+              "text-decoration: none",
+            ],
+          },
+        ];
+
+        for (const pattern of bootstrapBaseRulePatterns) {
+          if (!pattern.selector.test(safeString(selector).trim())) {
+            continue;
+          }
+
+          const matches = pattern.declarations.filter((declaration) =>
+            ruleSource.includes(declaration),
+          );
+
+          /*
+           * Require at least two matching declarations
+           * for multi-declaration base rules.
+           *
+           * Single-declaration rules are handled separately.
+           */
+          if (matches.length >= Math.min(2, pattern.declarations.length)) {
+            return "Bootstrap";
+          }
+        }
+
+        /*
+         * Bootstrap utility/component selectors.
+         *
+         * These selectors are specific enough to provide
+         * rule-level evidence.
+         */
+        if (
+          /\.container\b/.test(ruleSource) ||
+          /\.row\b/.test(ruleSource) ||
+          /\.btn\b/.test(ruleSource) ||
+          /\.nav-link\b/.test(ruleSource) ||
+          /\.navbar\b/.test(ruleSource)
+        ) {
+          return "Bootstrap";
+        }
+
+        return null;
+      }
+
+      case "Tailwind":
+        /*
+         * Tailwind attribution remains conservative.
+         */
+        return null;
+
+      case "Foundation":
+        if (
+          ruleSource.includes(".grid-x") ||
+          ruleSource.includes(".grid-y") ||
+          ruleSource.includes(".cell") ||
+          ruleSource.includes(".callout")
+        ) {
+          return "Foundation";
+        }
+
+        return null;
+
+      case "Bulma":
+        if (
+          ruleSource.includes(".columns") ||
+          ruleSource.includes(".column") ||
+          ruleSource.includes(".is-") ||
+          ruleSource.includes(".has-")
+        ) {
+          return "Bulma";
+        }
+
+        return null;
+
+      case "Materialize":
+        if (
+          ruleSource.includes(".row") ||
+          ruleSource.includes(".col.s") ||
+          ruleSource.includes(".btn")
+        ) {
+          return "Materialize";
+        }
+
+        return null;
+
+      case "Mobirise":
+        if (ruleSource.includes(".mbr-") || ruleSource.includes("mbr-")) {
+          return "Mobirise";
+        }
+
+        return null;
+
+      default:
+        return null;
+    }
+  }
+
+  function getRuleFrameworkAttributionConfidence(
+  frameworkAttribution,
+  evidence = [],
+) {
+  if (!frameworkAttribution) {
+    return "none";
+  }
+
+  const evidenceList = Array.isArray(evidence)
+    ? evidence
+    : [];
+
+  if (!evidenceList.length) {
+    return "none";
+  }
+
+  /*
+   * Strong rule-level fingerprints
+   */
+  const strongEvidence = new Set([
+    "bootstrap-css-fingerprint",
+    "bootstrap-base-rule-fingerprint",
+    "foundation-css-fingerprint",
+    "bulma-css-fingerprint",
+    "materialize-css-fingerprint",
+    "mobirise-css-fingerprint",
+  ]);
+
+  if (
+    evidenceList.some((item) =>
+      strongEvidence.has(item),
+    )
+  ) {
+    return "strong";
+  }
+
+  /*
+   * Framework component / utility selector evidence
+   */
+  if (
+    evidenceList.includes("bootstrap-component-selector")
+  ) {
+    return "medium";
+  }
+
+  return "weak";
+}
+
   function hasStrongFrameworkSignature(framework, href, cssText, title) {
     const source = (
       safeString(href) +
@@ -2550,60 +2944,117 @@
     const evidence = [];
 
     /*
+     * V2.5.2
+     *
+     * Framework evidence quality:
+     *
+     * Strong evidence:
+     *   Direct framework stylesheet / official signature.
+     *
+     * Medium evidence:
+     *   Framework-specific CSS fingerprints.
+     *
+     * Weak evidence:
+     *   Generic framework name appearing in source.
+     *
+     * Existing evidence strings are preserved so
+     * downstream UI / logic remains compatible.
+     */
+
+    /*
      * Bootstrap
      */
-    if (source.includes("bootstrap")) {
+
+    // Strong
+    if (
+      source.includes("getbootstrap.com") ||
+      source.includes("bootstrap.min.css")
+    ) {
       evidence.push("bootstrap-signature");
     }
 
+    // Medium
     if (
       source.includes("--bs-") ||
-      source.includes(".container") ||
-      source.includes(".row") ||
-      source.includes(".col-") ||
       source.includes(".navbar") ||
-      source.includes(".btn")
+      source.includes(".col-")
     ) {
       evidence.push("bootstrap-css-fingerprint");
+    }
+
+    // Weak
+    if (
+      source.includes("bootstrap") &&
+      !evidence.includes("bootstrap-signature")
+    ) {
+      evidence.push("bootstrap-name");
     }
 
     /*
      * Tailwind
      */
-    if (source.includes("tailwind")) {
+
+    // Strong
+    if (source.includes("tailwindcss") || source.includes("tailwind.min.css")) {
       evidence.push("tailwind-signature");
     }
 
     /*
      * Foundation
      */
-    if (source.includes("foundation")) {
+
+    // Strong
+    if (
+      source.includes("foundation.min.css") ||
+      source.includes("foundation-sites")
+    ) {
       evidence.push("foundation-signature");
     }
 
     /*
      * Bulma
      */
-    if (source.includes("bulma")) {
+
+    // Strong
+    if (source.includes("bulma.min.css") || source.includes("bulma.css")) {
       evidence.push("bulma-signature");
     }
 
     /*
      * Materialize
      */
-    if (source.includes("materialize")) {
+
+    // Strong
+    if (
+      source.includes("materialize.min.css") ||
+      source.includes("materialize.css")
+    ) {
       evidence.push("materialize-signature");
     }
 
     /*
      * Mobirise
      */
+
+    // Strong
     if (source.includes("mobirise") || source.includes("mbr-")) {
       evidence.push("mobirise-signature");
     }
 
+    /*
+     * Evidence count
+     *
+     * Keep the existing numeric field for
+     * backward compatibility.
+     */
     const frameworkEvidenceCount = evidence.length;
 
+    /*
+     * Confidence
+     *
+     * Two or more independent evidence signals
+     * remain high confidence.
+     */
     const frameworkConfidence =
       frameworkEvidenceCount >= 2
         ? "high"
@@ -2611,8 +3062,15 @@
           ? "low"
           : "none";
 
+    /*
+     * Framework detection
+     */
     const framework = detectFramework(href, cssText);
 
+    /*
+     * Strong attribution remains separately protected
+     * by hasStrongFrameworkSignature().
+     */
     const frameworkAttribution = hasStrongFrameworkSignature(
       framework,
       href,
