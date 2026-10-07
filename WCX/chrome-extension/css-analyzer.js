@@ -4195,6 +4195,14 @@
 
           stylesheetFramework: rule.stylesheetFramework,
 
+          frameworkAttribution: rule.frameworkAttribution,
+
+          frameworkAttributionEvidence: safeArray(
+            rule.frameworkAttributionEvidence,
+          ),
+
+          frameworkAttributionConfidence: rule.frameworkAttributionConfidence,
+
           ruleIndex: rule.ruleIndex,
 
           sourceOrder: rule.sourceOrder,
@@ -4461,6 +4469,16 @@
             winner.frameworkAttribution ??
             winner.rule?.frameworkAttribution ??
             null,
+
+          frameworkAttributionEvidence: safeArray(
+            winner.frameworkAttributionEvidence ??
+              winner.rule?.frameworkAttributionEvidence,
+          ),
+
+          frameworkAttributionConfidence:
+            winner.frameworkAttributionConfidence ??
+            winner.rule?.frameworkAttributionConfidence ??
+            "none",
 
           ruleIndex: winner.ruleIndex,
 
@@ -6204,6 +6222,91 @@
     return Array.from(groups.values());
   }
 
+  function buildFrameworkIndependentReconstructionModel(
+    renderingDependencies,
+    root,
+  ) {
+    const dependencies = safeArray(renderingDependencies);
+
+    return {
+      version: "2.6.1",
+
+      root: root
+        ? {
+            tagName: safeString(root.tagName).toLowerCase(),
+            id: safeString(root.id),
+            className: safeString(root.className),
+            label: getNodeLabel(root),
+            selector: buildStableSelector(root),
+          }
+        : null,
+
+      declarations: dependencies.map((dependency) => ({
+        elementLabel: safeString(dependency.elementLabel),
+
+        matchedElementLabels: safeArray(dependency.matchedElementLabels),
+
+        property: safeString(dependency.property),
+
+        value: safeString(dependency.value),
+
+        originalProperty: safeString(dependency.originalProperty),
+
+        originalValue: safeString(dependency.originalValue),
+
+        important: dependency.important === true,
+
+        declarationType: safeString(dependency.declarationType),
+
+        declarationIndex: dependency.declarationIndex ?? 0,
+
+        expandedProperties: safeArray(dependency.expandedProperties),
+
+        expandedFrom: safeString(dependency.expandedFrom),
+
+        selector: safeString(dependency.selector),
+
+        originalSelector: safeString(dependency.originalSelector),
+
+        specificity: dependency.specificity,
+
+        dependencyType: safeString(dependency.dependencyType),
+
+        globalRenderingRole: safeString(dependency.globalRenderingRole),
+
+        stylesheetFramework: safeString(dependency.stylesheetFramework),
+
+        frameworkAttribution: safeString(dependency.frameworkAttribution),
+
+        frameworkAttributionEvidence: safeArray(
+          dependency.frameworkAttributionEvidence,
+        ),
+
+        frameworkAttributionConfidence: safeString(
+          dependency.frameworkAttributionConfidence,
+        ),
+
+        responsive: dependency.responsive === true,
+
+        responsiveType: safeString(dependency.responsiveType),
+
+        responsiveCondition: dependency.responsiveCondition ?? null,
+
+        responsiveActive: dependency.responsiveActive === true,
+
+        stateDependencies: safeArray(dependency.stateDependencies),
+
+        stateActive: dependency.stateActive === true,
+
+        variableReferences: safeArray(dependency.variableReferences),
+
+        varResolution: dependency.varResolution ?? null,
+
+        cssText: safeString(dependency.cssText),
+      })),
+    };
+  }
+
   /* =========================================================
      MAIN ANALYZER
   ========================================================= */
@@ -6641,8 +6744,17 @@
 
       0,
     );
+
+    const reconstructionModel = buildFrameworkIndependentReconstructionModel(
+      renderingDependencies,
+      root,
+    );
+
+    console.log("🔥 WCX V2.6.1 RECONSTRUCTION MODEL:", reconstructionModel);
+
     window.__WCX_LAST_CSS_ANALYSIS = {
       dependencies: renderingDependencies,
+      reconstructionModel,
     };
 
     console.table(
