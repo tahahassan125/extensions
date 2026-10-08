@@ -6222,7 +6222,7 @@
     return Array.from(groups.values());
   }
 
-  function buildReconstructedDeclarationRecord(declaration) {
+  function buildReconstructedDeclarationRecord(declaration, root) {
     if (!declaration) {
       return null;
     }
@@ -6276,6 +6276,12 @@
 
       originalSelector: safeString(declaration.originalSelector),
 
+      isolatedSelector: buildIsolatedSelector(
+        declaration.selector,
+        root,
+        declaration.matchedElementDetails,
+      ),
+
       matchedElementLabels: safeArray(declaration.matchedElementLabels),
 
       matchedElementDetails: safeArray(declaration.matchedElementDetails),
@@ -6323,30 +6329,57 @@
       return "";
     }
 
+    /*
+     * Global selectors are intentionally excluded
+     * from component selector isolation.
+     *
+     * They belong to the page rendering context and
+     * will be handled separately by the global
+     * reconstruction stage.
+     */
+    if (
+      normalizedSelector === "*" ||
+      normalizedSelector === "html" ||
+      normalizedSelector === "body"
+    ) {
+      return "";
+    }
+
+    const rootSelector = buildStableSelector(root);
+
+    if (!rootSelector) {
+      return "";
+    }
+
     const rootLabel = getNodeLabel(root);
 
-    const matchedLabels = safeArray(matchedElementDetails).map((detail) =>
-      safeString(detail?.label),
-    );
+    const matchedLabels = safeArray(matchedElementDetails)
+      .map((detail) => safeString(detail?.label))
+      .filter(Boolean);
 
     /*
      * Root selector.
+     *
+     * The source selector directly affects the selected
+     * component root.
      */
     if (matchedLabels.includes(rootLabel)) {
-      return `:where(${buildStableSelector(root)})`;
+      return `:where(${rootSelector})`;
     }
 
     /*
      * Descendant selector.
      *
-     * For V2.6.3 Step 1 we only establish
-     * component scoping. Complex selector rewriting
-     * will be handled by later cases.
+     * The source selector affects an element inside
+     * the selected component.
      */
     if (matchedLabels.length) {
-      return `:where(${buildStableSelector(root)}) ${normalizedSelector}`;
+      return `:where(${rootSelector}) ${normalizedSelector}`;
     }
 
+    /*
+     * No reliable component relationship.
+     */
     return "";
   }
 
@@ -6387,7 +6420,9 @@
         : null,
 
       declarations: dependencies
-        .map((dependency) => buildReconstructedDeclarationRecord(dependency))
+        .map((dependency) =>
+          buildReconstructedDeclarationRecord(dependency, root),
+        )
         .filter(Boolean),
     };
   }
@@ -6835,21 +6870,13 @@
       root,
     );
 
+
     window.__WCX_LAST_CSS_ANALYSIS = {
       dependencies: renderingDependencies,
       reconstructionModel,
     };
 
-    console.table(
-      reconstructionModel.declarations.slice(0, 15).map((declaration) => ({
-        selector: declaration.selector,
-        originalSelector: declaration.originalSelector,
-        property: declaration.property,
-        value: declaration.value,
-        matchedElementLabels: declaration.matchedElementLabels,
-        matchedElementDetails: declaration.matchedElementDetails,
-      })),
-    );
+    
 
     return {
       version: VERSION,
