@@ -6222,6 +6222,151 @@
     return Array.from(groups.values());
   }
 
+  function buildReconstructedDeclarationRecord(declaration) {
+    if (!declaration) {
+      return null;
+    }
+
+    const property = safeString(declaration.property);
+    const value = safeString(declaration.value);
+
+    if (!property || !value) {
+      return null;
+    }
+
+    const originalProperty = safeString(
+      declaration.originalProperty || property,
+    );
+
+    const originalValue = safeString(declaration.originalValue || value);
+
+    const expandedProperties = safeArray(declaration.expandedProperties);
+
+    const isShorthand = declaration.declarationType === "shorthand";
+
+    return {
+      property,
+
+      value,
+
+      originalProperty,
+
+      originalValue,
+
+      important: declaration.important === true,
+
+      declarationType: isShorthand
+        ? "shorthand"
+        : safeString(declaration.declarationType || "longhand"),
+
+      declarationIndex: declaration.declarationIndex ?? 0,
+
+      expandedProperties,
+
+      expandedFrom: safeString(declaration.expandedFrom),
+
+      reconstructionProperty:
+        isShorthand && expandedProperties.length
+          ? expandedProperties.map((item) => safeString(item.property))
+          : [property],
+
+      reconstructionValue: value,
+
+      selector: safeString(declaration.selector),
+
+      originalSelector: safeString(declaration.originalSelector),
+
+      matchedElementLabels: safeArray(declaration.matchedElementLabels),
+
+      matchedElementDetails: safeArray(declaration.matchedElementDetails),
+
+      specificity: declaration.specificity,
+
+      dependencyType: safeString(declaration.dependencyType),
+
+      globalRenderingRole: safeString(declaration.globalRenderingRole),
+
+      responsive: declaration.responsive === true,
+
+      responsiveType: safeString(declaration.responsiveType),
+
+      responsiveCondition: declaration.responsiveCondition ?? null,
+
+      responsiveActive: declaration.responsiveActive === true,
+
+      stateDependencies: safeArray(declaration.stateDependencies),
+
+      stateActive: declaration.stateActive === true,
+
+      variableReferences: safeArray(declaration.variableReferences),
+
+      frameworkAttribution: safeString(declaration.frameworkAttribution),
+
+      frameworkAttributionEvidence: safeArray(
+        declaration.frameworkAttributionEvidence,
+      ),
+
+      frameworkAttributionConfidence: safeString(
+        declaration.frameworkAttributionConfidence,
+      ),
+    };
+  }
+
+  function buildIsolatedSelector(selector, root, matchedElementDetails = []) {
+    if (!selector || !root) {
+      return "";
+    }
+
+    const normalizedSelector = safeString(selector).trim();
+
+    if (!normalizedSelector) {
+      return "";
+    }
+
+    const rootLabel = getNodeLabel(root);
+
+    const matchedLabels = safeArray(matchedElementDetails).map((detail) =>
+      safeString(detail?.label),
+    );
+
+    /*
+     * Root selector.
+     */
+    if (matchedLabels.includes(rootLabel)) {
+      return `:where(${buildStableSelector(root)})`;
+    }
+
+    /*
+     * Descendant selector.
+     *
+     * For V2.6.3 Step 1 we only establish
+     * component scoping. Complex selector rewriting
+     * will be handled by later cases.
+     */
+    if (matchedLabels.length) {
+      return `:where(${buildStableSelector(root)}) ${normalizedSelector}`;
+    }
+
+    return "";
+  }
+
+  function buildReconstructedDeclarationCSS(declaration) {
+    if (!declaration) {
+      return "";
+    }
+
+    const property = safeString(declaration.property);
+    const value = safeString(declaration.value);
+
+    if (!property || !value) {
+      return "";
+    }
+
+    const important = declaration.important === true ? " !important" : "";
+
+    return `${property}: ${value}${important};`;
+  }
+
   function buildFrameworkIndependentReconstructionModel(
     renderingDependencies,
     root,
@@ -6241,69 +6386,9 @@
           }
         : null,
 
-      declarations: dependencies.map((dependency) => ({
-        elementLabel: safeString(dependency.elementLabel),
-
-        matchedElementLabels: safeArray(dependency.matchedElementLabels),
-
-        property: safeString(dependency.property),
-
-        value: safeString(dependency.value),
-
-        originalProperty: safeString(dependency.originalProperty),
-
-        originalValue: safeString(dependency.originalValue),
-
-        important: dependency.important === true,
-
-        declarationType: safeString(dependency.declarationType),
-
-        declarationIndex: dependency.declarationIndex ?? 0,
-
-        expandedProperties: safeArray(dependency.expandedProperties),
-
-        expandedFrom: safeString(dependency.expandedFrom),
-
-        selector: safeString(dependency.selector),
-
-        originalSelector: safeString(dependency.originalSelector),
-
-        specificity: dependency.specificity,
-
-        dependencyType: safeString(dependency.dependencyType),
-
-        globalRenderingRole: safeString(dependency.globalRenderingRole),
-
-        stylesheetFramework: safeString(dependency.stylesheetFramework),
-
-        frameworkAttribution: safeString(dependency.frameworkAttribution),
-
-        frameworkAttributionEvidence: safeArray(
-          dependency.frameworkAttributionEvidence,
-        ),
-
-        frameworkAttributionConfidence: safeString(
-          dependency.frameworkAttributionConfidence,
-        ),
-
-        responsive: dependency.responsive === true,
-
-        responsiveType: safeString(dependency.responsiveType),
-
-        responsiveCondition: dependency.responsiveCondition ?? null,
-
-        responsiveActive: dependency.responsiveActive === true,
-
-        stateDependencies: safeArray(dependency.stateDependencies),
-
-        stateActive: dependency.stateActive === true,
-
-        variableReferences: safeArray(dependency.variableReferences),
-
-        varResolution: dependency.varResolution ?? null,
-
-        cssText: safeString(dependency.cssText),
-      })),
+      declarations: dependencies
+        .map((dependency) => buildReconstructedDeclarationRecord(dependency))
+        .filter(Boolean),
     };
   }
 
@@ -6750,42 +6835,22 @@
       root,
     );
 
-    console.log("🔥 WCX V2.6.1 RECONSTRUCTION MODEL:", reconstructionModel);
-
     window.__WCX_LAST_CSS_ANALYSIS = {
       dependencies: renderingDependencies,
       reconstructionModel,
     };
 
     console.table(
-      renderingDependencies
-        .filter((dep) => dep.frameworkAttribution)
-        .map((dep) => ({
-          selector: dep.selector,
-          property: dep.property,
-          framework: dep.frameworkAttribution,
-          evidence: Array.isArray(dep.frameworkAttributionEvidence)
-            ? dep.frameworkAttributionEvidence.join(", ")
-            : "",
-          confidence: dep.frameworkAttributionConfidence || "none",
-        })),
+      reconstructionModel.declarations.slice(0, 15).map((declaration) => ({
+        selector: declaration.selector,
+        originalSelector: declaration.originalSelector,
+        property: declaration.property,
+        value: declaration.value,
+        matchedElementLabels: declaration.matchedElementLabels,
+        matchedElementDetails: declaration.matchedElementDetails,
+      })),
     );
 
-    console.table(
-      renderingDependencies
-        .filter((dep) => !dep.frameworkAttribution)
-        .slice(0, 20)
-        .map((dep) => ({
-          selector: dep.selector,
-          property: dep.property,
-          framework: dep.stylesheetFramework,
-          attribution: dep.frameworkAttribution,
-          evidence: Array.isArray(dep.frameworkAttributionEvidence)
-            ? dep.frameworkAttributionEvidence.join(", ")
-            : "",
-          confidence: dep.frameworkAttributionConfidence || "none",
-        })),
-    );
     return {
       version: VERSION,
       stylesheets,
