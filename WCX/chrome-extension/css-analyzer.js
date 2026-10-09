@@ -2307,6 +2307,26 @@
             context.elements,
           );
 
+          const pseudoElementMatch = selector.match(
+            /::(before|after|first-letter|first-line|marker|placeholder|selection)\b/i,
+          );
+
+          let pseudoElementRelevant = false;
+
+          if (pseudoElementMatch) {
+            const pseudoElement = `::${pseudoElementMatch[1]}`;
+
+            const structuralSelector = selector
+              .replace(pseudoElement, "")
+              .trim();
+
+            if (structuralSelector) {
+              pseudoElementRelevant =
+                selectorMatchesComponent(structuralSelector, context.elements)
+                  .length > 0;
+            }
+          }
+
           let effectiveMatchedElements = matchedElements;
 
           if (stateSelectorRelevant && !matchedElements.length) {
@@ -2324,7 +2344,11 @@
             );
           }
 
-          if (!matchedElements.length && !stateSelectorRelevant) {
+          if (
+            !matchedElements.length &&
+            !stateSelectorRelevant &&
+            !pseudoElementRelevant
+          ) {
             continue;
           }
 
@@ -6882,8 +6906,6 @@
       dependencies: renderingDependencies,
       reconstructionModel,
     };
-
-    
 
     return {
       version: VERSION,
