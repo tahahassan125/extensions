@@ -6883,8 +6883,7 @@
       reconstructionModel,
     };
 
-
-
+    
 
     return {
       version: VERSION,
