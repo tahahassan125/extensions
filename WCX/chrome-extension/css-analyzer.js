@@ -6244,6 +6244,12 @@
 
     const isShorthand = declaration.declarationType === "shorthand";
 
+    const isolatedSelector = buildIsolatedSelector(
+      declaration.selector,
+      root,
+      declaration.matchedElementDetails,
+    );
+
     return {
       property,
 
@@ -6276,11 +6282,7 @@
 
       originalSelector: safeString(declaration.originalSelector),
 
-      isolatedSelector: buildIsolatedSelector(
-        declaration.selector,
-        root,
-        declaration.matchedElementDetails,
-      ),
+      isolatedSelector,
 
       matchedElementLabels: safeArray(declaration.matchedElementLabels),
 
@@ -6364,7 +6366,13 @@
      * component root.
      */
     if (matchedLabels.includes(rootLabel)) {
-      return `:where(${rootSelector})`;
+      const rootStateMatch = normalizedSelector.match(
+        /:(hover|focus-visible|focus-within|focus|active|disabled|checked|target)(?![\w-])/,
+      );
+
+      const rootPseudoState = rootStateMatch ? rootStateMatch[0] : "";
+
+      return `:where(${rootSelector})${rootPseudoState}`;
     }
 
     /*
@@ -6870,13 +6878,13 @@
       root,
     );
 
-
     window.__WCX_LAST_CSS_ANALYSIS = {
       dependencies: renderingDependencies,
       reconstructionModel,
     };
 
-    
+
+
 
     return {
       version: VERSION,
@@ -7238,12 +7246,15 @@
       }
 
       if (current.classList && current.classList.length) {
-        part +=
-          "." +
-          Array.from(current.classList)
-            .slice(0, 3)
-            .map((c) => CSS.escape(c))
-            .join(".");
+        const stableClasses = Array.from(current.classList)
+          .filter((className) => !className.startsWith("wcx-"))
+          .slice(0, 3);
+
+        if (stableClasses.length) {
+          part +=
+            "." +
+            stableClasses.map((className) => CSS.escape(className)).join(".");
+        }
       }
 
       const parent = current.parentElement;
