@@ -6418,7 +6418,51 @@
      * The source selector affects an element inside
      * the selected component.
      */
+
     if (matchedLabels.length) {
+      const pseudoElementMatch = normalizedSelector.match(
+        /::(before|after|first-letter|first-line|marker|placeholder|selection)\b/i,
+      );
+
+      if (pseudoElementMatch) {
+        const pseudoElement = pseudoElementMatch[0];
+
+        const structuralSelector = normalizedSelector
+          .replace(pseudoElement, "")
+          .trim();
+
+        /*
+         * When the selected root itself matches the leading
+         * structural selector, remove that redundant root
+         * condition before scoping the descendant selector.
+         */
+        const rootClasses = safeString(root.className)
+          .split(/\s+/)
+          .filter(Boolean);
+
+        let scopedStructuralSelector = structuralSelector;
+
+        for (const className of rootClasses) {
+          const escapedClass = CSS.escape(className);
+          const classPattern = new RegExp(
+            `(^|[\\s>+~])\\.${escapedClass}(?=[\\s>+~.#:[\\]]|$)`,
+          );
+
+          if (classPattern.test(scopedStructuralSelector)) {
+            scopedStructuralSelector = scopedStructuralSelector.replace(
+              classPattern,
+              "$1",
+            );
+          }
+        }
+
+        scopedStructuralSelector = scopedStructuralSelector.trim();
+
+        if (scopedStructuralSelector) {
+          return `:where(${rootSelector}) ${scopedStructuralSelector}${pseudoElement}`;
+        }
+      }
+
       return `:where(${rootSelector}) ${normalizedSelector}`;
     }
 
@@ -6923,6 +6967,7 @@
     return {
       version: VERSION,
       stylesheets,
+      reconstructionModel,
 
       root: {
         tagName: root.tagName.toLowerCase(),

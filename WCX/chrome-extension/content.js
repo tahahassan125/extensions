@@ -967,6 +967,136 @@ function analyzeSelectedCSS(data) {
   );
 
   console.log(
+    "[WCX PSEUDO RECONSTRUCTION TEST]",
+    result.reconstructionModel?.declarations
+      ?.filter((item) =>
+        /figcaption::before|figcaption::after/i.test(
+          item.originalSelector || item.selector || item.isolatedSelector || "",
+        ),
+      )
+      .map((item) => ({
+        selector: item.selector,
+        originalSelector: item.originalSelector,
+        isolatedSelector: item.isolatedSelector,
+        property: item.property,
+        value: item.value,
+      })),
+  );
+
+  const pseudoReconstruction = result.reconstructionModel?.declarations?.filter(
+    (item) =>
+      /figcaption::before/i.test(item.originalSelector || item.selector || ""),
+  );
+
+  console.log(
+    "[WCX PSEUDO ISOLATION CHECK]",
+    pseudoReconstruction?.map((item) => ({
+      isolatedSelector: item.isolatedSelector,
+      property: item.property,
+      value: item.value,
+      matchesInPage: (() => {
+        try {
+          return document.querySelectorAll(item.isolatedSelector).length;
+        } catch (error) {
+          return "Invalid selector";
+        }
+      })(),
+    })),
+  );
+
+  console.log("[WCX PSEUDO SELECTOR COMPARISON]", {
+    rootSelector: result.root?.selector,
+
+    originalMatches: (() => {
+      try {
+        return document.querySelectorAll(".snip1571 figcaption").length;
+      } catch (error) {
+        return "Invalid selector";
+      }
+    })(),
+
+    rootMatches: (() => {
+      try {
+        return document.querySelectorAll(result.root?.selector || "").length;
+      } catch (error) {
+        return "Invalid selector";
+      }
+    })(),
+
+    isolatedSelector: result.reconstructionModel?.declarations?.find((item) =>
+      /figcaption::before/i.test(item.originalSelector || item.selector || ""),
+    )?.isolatedSelector,
+  });
+
+  console.log("[WCX ROOT DESCENDANT CHECK]", {
+    rootSelector: result.root?.selector,
+
+    rootHasFigcaption: (() => {
+      try {
+        const root = document.querySelector(result.root?.selector || "");
+        return root
+          ? root.querySelectorAll("figcaption").length
+          : "Root not found";
+      } catch (error) {
+        return "Invalid root selector";
+      }
+    })(),
+
+    originalSelector: ".snip1571 figcaption::before",
+
+    isolatedSelectorMatches: (() => {
+      const selector = result.reconstructionModel?.declarations?.find((item) =>
+        /figcaption::before/i.test(
+          item.originalSelector || item.selector || "",
+        ),
+      )?.isolatedSelector;
+
+      try {
+        return selector
+          ? document.querySelectorAll(selector).length
+          : "No isolated selector";
+      } catch (error) {
+        return "Invalid isolated selector";
+      }
+    })(),
+  });
+
+  console.log("[WCX PSEUDO STRUCTURAL CHECK]", {
+    rootSelector: result.root?.selector,
+
+    rootHasFigcaption: (() => {
+      try {
+        const root = document.querySelector(result.root?.selector || "");
+        return root?.querySelectorAll("figcaption").length ?? "Root not found";
+      } catch (error) {
+        return "Invalid root selector";
+      }
+    })(),
+
+    scopedStructuralMatches: (() => {
+      const item = result.reconstructionModel?.declarations?.find(
+        (declaration) =>
+          /figcaption::before/i.test(
+            declaration.originalSelector || declaration.selector || "",
+          ),
+      );
+
+      const selector = item?.isolatedSelector?.replace(
+        /::(before|after|first-letter|first-line|marker|placeholder|selection)\b/i,
+        "",
+      );
+
+      try {
+        return selector
+          ? document.querySelectorAll(selector).length
+          : "No selector";
+      } catch (error) {
+        return "Invalid structural selector";
+      }
+    })(),
+  });
+
+  console.log(
     "🔥 WCX STATE DEPENDENCIES:",
     result.dependencies
       .filter((item) => item.stateDependencies?.length)
