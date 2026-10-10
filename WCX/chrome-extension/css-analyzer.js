@@ -2376,6 +2376,7 @@
           ) {
             console.log("[WCX PSEUDO RULE TRACE]", {
               selector,
+              selectorText: rule.selectorText,
               stateDependencies,
               matchedElements: matchedElements.length,
               stateSelectorRelevant,
@@ -2399,6 +2400,18 @@
           const specificity = calculateSpecificity(selector);
 
           const declarations = getStyleDeclarations(rule.style, rule.cssText);
+
+          if (/snip1571.*figcaption::before/i.test(selectorText)) {
+            console.log("[WCX TARGETED HOVER CHECK]", {
+              selector,
+              selectorText,
+              cssText: rule.cssText,
+              declarations: declarations.map(({ property, value }) => ({
+                property,
+                value,
+              })),
+            });
+          }
 
           const frameworkAttributionEvidence =
             getRuleFrameworkAttributionEvidence(
