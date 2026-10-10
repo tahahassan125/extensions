@@ -2401,7 +2401,11 @@
 
           const declarations = getStyleDeclarations(rule.style, rule.cssText);
 
-          if (/snip1571.*figcaption::before/i.test(selectorText)) {
+          if (
+            /snip1571:hover\s+figcaption::before|snip1571\.hover\s+figcaption::before/i.test(
+              selectorText,
+            )
+          ) {
             console.log("[WCX TARGETED HOVER CHECK]", {
               selector,
               selectorText,
