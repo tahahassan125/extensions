@@ -952,6 +952,21 @@ function analyzeSelectedCSS(data) {
   console.log("🔥 WCX CSS V2 ANALYSIS:", result);
 
   console.log(
+    "[WCX PSEUDO-ELEMENT DIAGNOSTIC]",
+    result.dependencies
+      .filter((item) =>
+        /figcaption::before|figcaption::after/i.test(item.selector || ""),
+      )
+      .map((item) => ({
+        selector: item.selector,
+        property: item.property,
+        dependencyType: item.dependencyType,
+        matchedElementLabels: item.matchedElementLabels,
+        stylesheetHref: item.stylesheetHref,
+      })),
+  );
+
+  console.log(
     "🔥 WCX STATE DEPENDENCIES:",
     result.dependencies
       .filter((item) => item.stateDependencies?.length)

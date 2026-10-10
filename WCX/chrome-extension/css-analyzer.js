@@ -2307,6 +2307,8 @@
             context.elements,
           );
 
+          let effectiveMatchedElements = matchedElements;
+
           const pseudoElementMatch = selector.match(
             /::(before|after|first-letter|first-line|marker|placeholder|selection)\b/i,
           );
@@ -2321,13 +2323,14 @@
               .trim();
 
             if (structuralSelector) {
-              pseudoElementRelevant =
-                selectorMatchesComponent(structuralSelector, context.elements)
-                  .length > 0;
+              effectiveMatchedElements = selectorMatchesComponent(
+                structuralSelector,
+                context.elements,
+              );
+
+              pseudoElementRelevant = effectiveMatchedElements.length > 0;
             }
           }
-
-          let effectiveMatchedElements = matchedElements;
 
           if (stateSelectorRelevant && !matchedElements.length) {
             let structuralSelector = selector;
@@ -2350,6 +2353,16 @@
             !pseudoElementRelevant
           ) {
             continue;
+          }
+
+          if (/figcaption::before|figcaption::after/i.test(selector)) {
+            console.log("[WCX PSEUDO RULE TRACE]", {
+              selector,
+              matchedElements: matchedElements.length,
+              stateSelectorRelevant,
+              pseudoElementRelevant,
+              effectiveMatchedElements: effectiveMatchedElements.length,
+            });
           }
 
           const specificity = calculateSpecificity(selector);
