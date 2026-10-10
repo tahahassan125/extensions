@@ -990,18 +990,39 @@ function analyzeSelectedCSS(data) {
 
   console.log(
     "[WCX PSEUDO ISOLATION CHECK]",
-    pseudoReconstruction?.map((item) => ({
-      isolatedSelector: item.isolatedSelector,
-      property: item.property,
-      value: item.value,
-      matchesInPage: (() => {
-        try {
-          return document.querySelectorAll(item.isolatedSelector).length;
-        } catch (error) {
-          return "Invalid selector";
-        }
-      })(),
-    })),
+    pseudoReconstruction?.map((item) => {
+      const selector = item.isolatedSelector || "";
+      const structuralSelector = selector
+        .replace(
+          /::(before|after|first-letter|first-line|marker|placeholder|selection)\b/gi,
+          "",
+        )
+        .trim();
+
+      try {
+        return {
+          isolatedSelector: selector,
+          structuralSelector,
+          property: item.property,
+          value: item.value,
+
+          structuralMatches:
+            document.querySelectorAll(structuralSelector).length,
+
+          pseudoElement:
+            selector.match(
+              /::(before|after|first-letter|first-line|marker|placeholder|selection)\b/i,
+            )?.[0] || null,
+        };
+      } catch (error) {
+        return {
+          isolatedSelector: selector,
+          property: item.property,
+          value: item.value,
+          error: error.message,
+        };
+      }
+    }),
   );
 
   console.log("[WCX PSEUDO SELECTOR COMPARISON]", {

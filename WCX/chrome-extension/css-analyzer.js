@@ -2289,10 +2289,24 @@
       if (ruleType === "style") {
         const selectorText = safeString(rule.selectorText);
 
+        if (/snip1571.*figcaption::before/i.test(selectorText)) {
+          console.log("[WCX HOVER SOURCE RULE]", {
+            selectorText,
+            cssText: rule.cssText,
+          });
+        }
+
         const selectors = selectorText
           .split(",")
           .map((s) => s.trim())
           .filter(Boolean);
+
+        if (/snip1571/i.test(selectorText)) {
+          console.log("[WCX SELECTOR SPLIT TEST]", {
+            selectorText,
+            selectors,
+          });
+        }
 
         for (const selector of selectors) {
           const stateDependencies = extractStatePseudoSelectors(selector);
@@ -2310,13 +2324,13 @@
           let effectiveMatchedElements = matchedElements;
 
           const pseudoElementMatch = selector.match(
-            /::(before|after|first-letter|first-line|marker|placeholder|selection)\b/i,
+            /:{1,2}(before|after|first-letter|first-line|marker|placeholder|selection)\b/i,
           );
 
           let pseudoElementRelevant = false;
 
           if (pseudoElementMatch) {
-            const pseudoElement = `::${pseudoElementMatch[1]}`;
+            const pseudoElement = pseudoElementMatch[0];
 
             const structuralSelector = selector
               .replace(pseudoElement, "")
@@ -2355,13 +2369,30 @@
             continue;
           }
 
-          if (/figcaption::before|figcaption::after/i.test(selector)) {
+          if (
+            /snip1571.*figcaption:{1,2}before|figcaption:{1,2}(before|after)/i.test(
+              selector,
+            )
+          ) {
             console.log("[WCX PSEUDO RULE TRACE]", {
               selector,
+              stateDependencies,
               matchedElements: matchedElements.length,
               stateSelectorRelevant,
               pseudoElementRelevant,
               effectiveMatchedElements: effectiveMatchedElements.length,
+              declarations: getStyleDeclarations(rule.style, rule.cssText).map(
+                ({ property, value }) => ({
+                  property,
+                  value,
+                }),
+              ),
+              decision:
+                !matchedElements.length &&
+                !stateSelectorRelevant &&
+                !pseudoElementRelevant
+                  ? "REJECTED"
+                  : "ACCEPTED",
             });
           }
 
@@ -6421,7 +6452,7 @@
 
     if (matchedLabels.length) {
       const pseudoElementMatch = normalizedSelector.match(
-        /::(before|after|first-letter|first-line|marker|placeholder|selection)\b/i,
+        /:{1,2}(before|after|first-letter|first-line|marker|placeholder|selection)\b/i,
       );
 
       if (pseudoElementMatch) {
