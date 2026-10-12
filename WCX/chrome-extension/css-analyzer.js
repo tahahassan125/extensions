@@ -2401,8 +2401,41 @@
 
           const declarations = getStyleDeclarations(rule.style, rule.cssText);
 
+          console.log("[WCX RULE DEBUG]", {
+            selectorText,
+            selector,
+            cssText: rule.cssText,
+          });
+
+          if (selectorText.includes(".snip1571:hover figcaption::before")) {
+            console.log("[WCX EXACT HOVER RULE REACHED]", {
+              selector,
+              selectorText,
+              cssText: rule.cssText,
+              declarations: declarations.map(({ property, value }) => ({
+                property,
+                value,
+              })),
+            });
+          }
+
+          if (/snip1571/i.test(selectorText)) {
+            console.log("[WCX TARGETED CHECK REACHED]", {
+              selector,
+              selectorText,
+            });
+          }
+
+          if (/figcaption::before/i.test(selectorText)) {
+            console.log("[WCX FIGCAPTION CHECK REACHED]", {
+              selector,
+              selectorText,
+              cssText: rule.cssText,
+            });
+          }
+
           if (
-            /snip1571:hover\s+figcaption::before|snip1571\.hover\s+figcaption::before/i.test(
+            /\.snip1571(?::hover|\.hover)\s+figcaption::before/i.test(
               selectorText,
             )
           ) {
