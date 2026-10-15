@@ -2342,9 +2342,14 @@
           if (pseudoElementMatch) {
             const pseudoElement = pseudoElementMatch[0];
 
-            const structuralSelector = selector
-              .replace(pseudoElement, "")
-              .trim();
+            let structuralSelector = selector.replace(pseudoElement, "").trim();
+
+            // Remove state pseudo-classes for structural matching only.
+            for (const pseudo of stateDependencies) {
+              structuralSelector = structuralSelector.replace(pseudo, "");
+            }
+
+            structuralSelector = structuralSelector.trim();
 
             if (structuralSelector) {
               effectiveMatchedElements = selectorMatchesComponent(
@@ -2369,6 +2374,23 @@
               structuralSelector,
               context.elements,
             );
+          }
+
+          if (
+            selector.includes(".snip1571:hover figcaption::before") ||
+            selector.includes(".snip1571.hover figcaption::before")
+          ) {
+            console.log("[WCX HOVER REJECTION CHECK]", {
+              selector,
+              matchedElements: matchedElements.length,
+              stateSelectorRelevant,
+              pseudoElementRelevant,
+              effectiveMatchedElements: effectiveMatchedElements.length,
+              wouldReject:
+                !matchedElements.length &&
+                !stateSelectorRelevant &&
+                !pseudoElementRelevant,
+            });
           }
 
           if (
@@ -2475,9 +2497,8 @@
           }
 
           if (
-            /\.snip1571(?::hover|\.hover)\s+figcaption::before/i.test(
-              selectorText,
-            )
+            selectorText.includes(".snip1571:hover figcaption::before") ||
+            selectorText.includes(".snip1571.hover figcaption::before")
           ) {
             console.log("[WCX TARGETED HOVER CHECK]", {
               selector,
