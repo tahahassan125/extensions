@@ -2289,6 +2289,16 @@
       if (ruleType === "style") {
         const selectorText = safeString(rule.selectorText);
 
+        if (
+          selectorText.includes(".snip1571:hover figcaption::before") ||
+          selectorText.includes(".snip1571.hover figcaption::before")
+        ) {
+          console.log("[WCX HOVER TRAVERSAL CONFIRMED]", {
+            selectorText,
+            cssText: rule.cssText,
+          });
+        }
+
         if (/snip1571.*figcaption::before/i.test(selectorText)) {
           console.log("[WCX HOVER SOURCE RULE]", {
             selectorText,
@@ -2400,6 +2410,36 @@
           const specificity = calculateSpecificity(selector);
 
           const declarations = getStyleDeclarations(rule.style, rule.cssText);
+
+          if (rule.cssText.includes("right: -5px")) {
+            console.log("[WCX RIGHT DECLARATION FOUND]", {
+              selectorText,
+              cssText: rule.cssText,
+              declarations: declarations.map(({ property, value }) => ({
+                property,
+                value,
+              })),
+            });
+          }
+
+          console.log("[WCX DECLARATIONS LINE REACHED]", {
+            selectorText,
+            cssText: rule.cssText,
+          });
+
+          if (
+            selectorText.includes(".snip1571:hover figcaption::before") ||
+            selectorText.includes(".snip1571.hover figcaption::before")
+          ) {
+            console.log("[WCX HOVER DECLARATIONS]", {
+              selector,
+              selectorText,
+              declarations: declarations.map(({ property, value }) => ({
+                property,
+                value,
+              })),
+            });
+          }
 
           console.log("[WCX RULE DEBUG]", {
             selectorText,
