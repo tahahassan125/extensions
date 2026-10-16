@@ -6569,23 +6569,32 @@
       if (pseudoElementMatch) {
         const pseudoElement = pseudoElementMatch[0];
 
-        const structuralSelector = normalizedSelector
+        let structuralSelector = normalizedSelector
           .replace(pseudoElement, "")
           .trim();
 
-        /*
-         * When the selected root itself matches the leading
-         * structural selector, remove that redundant root
-         * condition before scoping the descendant selector.
-         */
+        // Preserve state pseudo-classes separately.
+        const rootStateMatch = structuralSelector.match(
+          /:(hover|focus-visible|focus-within|focus|active|disabled|checked|target)(?![\w-])/,
+        );
+
+        const rootPseudoState = rootStateMatch ? rootStateMatch[0] : "";
+
+        if (rootPseudoState) {
+          structuralSelector = structuralSelector
+            .replace(rootPseudoState, "")
+            .trim();
+        }
+
         const rootClasses = safeString(root.className)
           .split(/\s+/)
-          .filter(Boolean);
+          .filter((className) => className && !className.startsWith("wcx-"));
 
         let scopedStructuralSelector = structuralSelector;
 
         for (const className of rootClasses) {
           const escapedClass = CSS.escape(className);
+
           const classPattern = new RegExp(
             `(^|[\\s>+~])\\.${escapedClass}(?=[\\s>+~.#:[\\]]|$)`,
           );
@@ -6601,11 +6610,43 @@
         scopedStructuralSelector = scopedStructuralSelector.trim();
 
         if (scopedStructuralSelector) {
-          return `:where(${rootSelector}) ${scopedStructuralSelector}${pseudoElement}`;
+          return `:where(${rootSelector})${rootPseudoState} ${scopedStructuralSelector}${pseudoElement}`;
         }
       }
 
-      return `:where(${rootSelector}) ${normalizedSelector}`;
+      // Remove the selected root's classes from the source selector.
+      let scopedSelector = normalizedSelector;
+
+      const rootClasses = safeString(root.className)
+        .split(/\s+/)
+        .filter((className) => className && !className.startsWith("wcx-"));
+
+      for (const className of rootClasses) {
+        const escapedClass = CSS.escape(className);
+
+        const classPattern = new RegExp(
+          `(^|[\\s>+~])\\.${escapedClass}(?=[\\s>+~.#:[\\]]|$)`,
+        );
+
+        if (classPattern.test(scopedSelector)) {
+          scopedSelector = scopedSelector.replace(classPattern, "$1");
+        }
+      }
+
+      scopedSelector = scopedSelector.trim();
+
+      // Preserve root state, such as :hover, before descendant combinators.
+      const rootStateMatch = scopedSelector.match(
+        /:(hover|focus-visible|focus-within|focus|active|disabled|checked|target)(?![\w-])/,
+      );
+
+      const rootPseudoState = rootStateMatch ? rootStateMatch[0] : "";
+
+      if (rootPseudoState) {
+        scopedSelector = scopedSelector.replace(rootPseudoState, "").trim();
+      }
+
+      return `:where(${rootSelector})${rootPseudoState} ${scopedSelector}`;
     }
 
     /*
@@ -7101,10 +7142,35 @@
       root,
     );
 
+    console.log("[WCX ANALYSIS GLOBAL ASSIGNMENT]", {
+      dependenciesCount: renderingDependencies.length,
+      declarationsCount: reconstructionModel.declarations.length,
+    });
+
     window.__WCX_LAST_CSS_ANALYSIS = {
       dependencies: renderingDependencies,
       reconstructionModel,
     };
+
+    console.log(
+      "[WCX FINAL HOVER RECONSTRUCTION]",
+      reconstructionModel.declarations
+        .filter(
+          (d) =>
+            d.originalSelector?.includes("snip1571:hover") ||
+            d.selector?.includes("snip1571:hover") ||
+            (d.property === "right" && d.value === "-5px"),
+        )
+        .map((d) => ({
+          property: d.property,
+          value: d.value,
+          selector: d.selector,
+          originalSelector: d.originalSelector,
+          isolatedSelector: d.isolatedSelector,
+          stateDependencies: d.stateDependencies,
+          stateActive: d.stateActive,
+        })),
+    );
 
     return {
       version: VERSION,
