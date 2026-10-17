@@ -1140,7 +1140,7 @@
     const map = new Map();
 
     for (const winner of safeArray(winners)) {
-      if (!winner?.element) continue;
+      if (!winner?.element || winner.pseudoElement) continue;
 
       if (!map.has(winner.element)) {
         map.set(winner.element, new Map());
@@ -2552,6 +2552,11 @@
             selector,
 
             originalSelector: selectorText,
+
+            // Keep pseudo-element declarations separate from the originating element.
+            pseudoElement: pseudoElementMatch
+              ? pseudoElementMatch[1].toLowerCase()
+              : null,
 
             stateDependencies,
 
@@ -4358,6 +4363,8 @@
 
           originalSelector: rule.originalSelector,
 
+          pseudoElement: rule.pseudoElement ?? null,
+
           matchedElements: rule.matchedElements,
 
           matchedElementLabels: safeArray(rule.matchedElementLabels),
@@ -4516,14 +4523,15 @@
      * Map:
      *
      * element
-     *   -> property
-     *      -> declarations
+     *   -> pseudo-element target ("" for the real element)
+     *      -> property
+     *         -> declarations
      */
 
     const map = new Map();
 
     for (const element of safeArray(elements)) {
-      map.set(element, new Map());
+      map.set(element, new Map([["", new Map()]]));
     }
 
     /*
@@ -4547,7 +4555,14 @@
           map.set(element, new Map());
         }
 
-        const propertyMap = map.get(element);
+        const targetMap = map.get(element);
+        const pseudoElement = safeString(declaration.pseudoElement).toLowerCase();
+
+        if (!targetMap.has(pseudoElement)) {
+          targetMap.set(pseudoElement, new Map());
+        }
+
+        const propertyMap = targetMap.get(pseudoElement);
 
         if (!propertyMap.has(declaration.property)) {
           propertyMap.set(declaration.property, []);
@@ -4575,19 +4590,21 @@
 
     const overridden = [];
 
-    for (const [element, propertyMap] of map.entries()) {
-      for (const [property, candidates] of propertyMap.entries()) {
-        if (!candidates.length) {
-          continue;
-        }
+    for (const [element, targetMap] of map.entries()) {
+      for (const [pseudoElement, propertyMap] of targetMap.entries()) {
+        for (const [property, candidates] of propertyMap.entries()) {
+          if (!candidates.length) {
+            continue;
+          }
 
-        /*
-         * Sort weakest → strongest.
-         */
+          /*
+           * Sort weakest → strongest within the same element,
+           * pseudo-element target, and CSS property.
+           */
 
-        candidates.sort(compareCascadePriority);
+          candidates.sort(compareCascadePriority);
 
-        const winner = candidates[candidates.length - 1];
+          const winner = candidates[candidates.length - 1];
 
         winner.status = "winning";
 
@@ -4601,6 +4618,8 @@
           matchedElementLabels: safeArray(winner.matchedElementLabels),
 
           matchedElementDetails: safeArray(winner.matchedElementDetails),
+
+          pseudoElement: pseudoElement || null,
 
           property,
 
@@ -4724,16 +4743,17 @@
          * All weaker candidates are overridden.
          */
 
-        for (let i = 0; i < candidates.length - 1; i++) {
-          const overriddenDeclaration = candidates[i];
+          for (let i = 0; i < candidates.length - 1; i++) {
+            const overriddenDeclaration = candidates[i];
 
-          overriddenDeclaration.status = "overridden";
+            overriddenDeclaration.status = "overridden";
 
-          overriddenDeclaration.cascadeRank = getCascadeRank(
-            overriddenDeclaration,
-          );
+            overriddenDeclaration.cascadeRank = getCascadeRank(
+              overriddenDeclaration,
+            );
 
-          overridden.push(overriddenDeclaration);
+            overridden.push(overriddenDeclaration);
+          }
         }
       }
     }
