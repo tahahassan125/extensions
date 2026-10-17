@@ -979,12 +979,17 @@
     return parent;
   }
 
-  function getComputedPropertyValue(element, property) {
+  function getComputedPropertyValue(element, property, pseudoElement = null) {
     if (!element || !property) return "";
 
     try {
-      const computed = window.getComputedStyle(element);
-      return computed ? safeString(computed.getPropertyValue(property)) : "";
+      const computed = pseudoElement
+        ? window.getComputedStyle(element, `::${pseudoElement}`)
+        : window.getComputedStyle(element);
+
+      return computed
+        ? normalizeWhitespace(computed.getPropertyValue(property))
+        : "";
     } catch (error) {
       return "";
     }
@@ -4508,11 +4513,17 @@
      COMPUTED STYLE MAPPING
   ========================================================= */
 
-  function getComputedPropertyValue(element, property) {
-    try {
-      const computed = window.getComputedStyle(element);
+  function getComputedPropertyValue(element, property, pseudoElement = null) {
+    if (!element || !property) return "";
 
-      return normalizeWhitespace(computed.getPropertyValue(property));
+    try {
+      const computed = pseudoElement
+        ? window.getComputedStyle(element, `::${pseudoElement}`)
+        : window.getComputedStyle(element);
+
+      return computed
+        ? normalizeWhitespace(computed.getPropertyValue(property))
+        : "";
     } catch (error) {
       return "";
     }
@@ -4853,7 +4864,11 @@
         continue;
       }
 
-      const computedValue = getComputedPropertyValue(element, winner.property);
+      const computedValue = getComputedPropertyValue(
+        element,
+        winner.property,
+        winner.pseudoElement,
+      );
 
       winner.computedValue = computedValue;
 
