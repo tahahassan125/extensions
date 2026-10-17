@@ -4556,7 +4556,9 @@
         }
 
         const targetMap = map.get(element);
-        const pseudoElement = safeString(declaration.pseudoElement).toLowerCase();
+        const pseudoElement = safeString(
+          declaration.pseudoElement,
+        ).toLowerCase();
 
         if (!targetMap.has(pseudoElement)) {
           targetMap.set(pseudoElement, new Map());
@@ -4606,142 +4608,142 @@
 
           const winner = candidates[candidates.length - 1];
 
-        winner.status = "winning";
+          winner.status = "winning";
 
-        winner.cascadeRank = getCascadeRank(winner);
+          winner.cascadeRank = getCascadeRank(winner);
 
-        winners.push({
-          element,
+          winners.push({
+            element,
 
-          elementLabel: getNodeLabel(element),
+            elementLabel: getNodeLabel(element),
 
-          matchedElementLabels: safeArray(winner.matchedElementLabels),
+            matchedElementLabels: safeArray(winner.matchedElementLabels),
 
-          matchedElementDetails: safeArray(winner.matchedElementDetails),
+            matchedElementDetails: safeArray(winner.matchedElementDetails),
 
-          pseudoElement: pseudoElement || null,
+            pseudoElement: pseudoElement || null,
 
-          property,
+            property,
 
-          value: winner.value,
+            value: winner.value,
 
-          important: winner.important,
+            important: winner.important,
 
-          /*
-           * V2.1.2 source provenance.
-           */
+            /*
+             * V2.1.2 source provenance.
+             */
 
-          originalProperty: winner.originalProperty,
+            originalProperty: winner.originalProperty,
 
-          originalValue: winner.originalValue,
+            originalValue: winner.originalValue,
 
-          declarationType: winner.declarationType,
+            declarationType: winner.declarationType,
 
-          declarationIndex: winner.declarationIndex,
+            declarationIndex: winner.declarationIndex,
 
-          expandedIndex: winner.expandedIndex ?? 0,
+            expandedIndex: winner.expandedIndex ?? 0,
 
-          expandedFrom: winner.expandedFrom ?? null,
+            expandedFrom: winner.expandedFrom ?? null,
 
-          expandedProperties: safeArray(winner.expandedProperties),
+            expandedProperties: safeArray(winner.expandedProperties),
 
-          selector: winner.selector,
+            selector: winner.selector,
 
-          originalSelector: winner.originalSelector,
+            originalSelector: winner.originalSelector,
 
-          cssText: winner.rule?.cssText || "",
+            cssText: winner.rule?.cssText || "",
 
-          stylesheetIndex: winner.stylesheetIndex,
+            stylesheetIndex: winner.stylesheetIndex,
 
-          stylesheetHref: winner.stylesheetHref,
+            stylesheetHref: winner.stylesheetHref,
 
-          stylesheetTitle: winner.stylesheetTitle,
+            stylesheetTitle: winner.stylesheetTitle,
 
-          stylesheetFramework: winner.stylesheetFramework,
+            stylesheetFramework: winner.stylesheetFramework,
 
-          /*
-           * V2.5
-           * Preserve framework attribution from cascade winner.
-           */
-          frameworkAttribution:
-            winner.frameworkAttribution ??
-            winner.rule?.frameworkAttribution ??
-            null,
+            /*
+             * V2.5
+             * Preserve framework attribution from cascade winner.
+             */
+            frameworkAttribution:
+              winner.frameworkAttribution ??
+              winner.rule?.frameworkAttribution ??
+              null,
 
-          frameworkAttributionEvidence: safeArray(
-            winner.frameworkAttributionEvidence ??
-              winner.rule?.frameworkAttributionEvidence,
-          ),
+            frameworkAttributionEvidence: safeArray(
+              winner.frameworkAttributionEvidence ??
+                winner.rule?.frameworkAttributionEvidence,
+            ),
 
-          frameworkAttributionConfidence:
-            winner.frameworkAttributionConfidence ??
-            winner.rule?.frameworkAttributionConfidence ??
-            "none",
+            frameworkAttributionConfidence:
+              winner.frameworkAttributionConfidence ??
+              winner.rule?.frameworkAttributionConfidence ??
+              "none",
 
-          ruleIndex: winner.ruleIndex,
+            ruleIndex: winner.ruleIndex,
 
-          sourceOrder: winner.sourceOrder,
+            sourceOrder: winner.sourceOrder,
 
-          specificity: winner.specificity,
+            specificity: winner.specificity,
 
-          media: winner.media,
+            media: winner.media,
 
-          supports: winner.supports,
+            supports: winner.supports,
 
-          /*
-           * V2.3.1-R1
-           *
-           * Preserve the already-evaluated responsive state
-           * from the cascade winner.
-           */
+            /*
+             * V2.3.1-R1
+             *
+             * Preserve the already-evaluated responsive state
+             * from the cascade winner.
+             */
 
-          mediaActive: winner.mediaActive,
+            mediaActive: winner.mediaActive,
 
-          supportsActive: winner.supportsActive,
+            supportsActive: winner.supportsActive,
 
-          /*
-           * V2.3.2-A5
-           *
-           * Preserve state/pseudo dependency metadata
-           * from the cascade winner.
-           */
+            /*
+             * V2.3.2-A5
+             *
+             * Preserve state/pseudo dependency metadata
+             * from the cascade winner.
+             */
 
-          stateDependencies: safeArray(
-            winner.stateDependencies || winner.rule?.stateDependencies,
-          ),
-
-          /*
-           * V2.3.2-B
-           *
-           * Track whether a state/pseudo selector is
-           * currently active for the matched element.
-           */
-          stateActive: (() => {
-            const stateDependencies = safeArray(
+            stateDependencies: safeArray(
               winner.stateDependencies || winner.rule?.stateDependencies,
-            );
+            ),
 
-            if (!stateDependencies.length) {
-              return false;
-            }
+            /*
+             * V2.3.2-B
+             *
+             * Track whether a state/pseudo selector is
+             * currently active for the matched element.
+             */
+            stateActive: (() => {
+              const stateDependencies = safeArray(
+                winner.stateDependencies || winner.rule?.stateDependencies,
+              );
 
-            return isStateSelectorActive(winner.selector, element);
-          })(),
+              if (!stateDependencies.length) {
+                return false;
+              }
 
-          variableReferences: (() => {
-            const stored = safeArray(winner.variableReferences);
-            if (stored.length) return stored;
-            return extractVariableReferences(
-              winner.originalValue || winner.value || "",
-            );
-          })(),
+              return isStateSelectorActive(winner.selector, element);
+            })(),
 
-          declaration: winner,
-        });
+            variableReferences: (() => {
+              const stored = safeArray(winner.variableReferences);
+              if (stored.length) return stored;
+              return extractVariableReferences(
+                winner.originalValue || winner.value || "",
+              );
+            })(),
 
-        /*
-         * All weaker candidates are overridden.
-         */
+            declaration: winner,
+          });
+
+          /*
+           * All weaker candidates are overridden.
+           */
 
           for (let i = 0; i < candidates.length - 1; i++) {
             const overriddenDeclaration = candidates[i];

@@ -952,6 +952,26 @@ function analyzeSelectedCSS(data) {
   console.log("🔥 WCX CSS V2 ANALYSIS:", result);
 
   console.log(
+    "[WCX PSEUDO WINNER CHECK]",
+    result.dependencies
+      .filter((item) =>
+        /figcaption::before|figcaption::after/i.test(
+          item.selector || item.originalSelector || "",
+        ),
+      )
+      .map((item) => ({
+        selector: item.selector,
+        originalSelector: item.originalSelector,
+        pseudoElement: item.pseudoElement,
+        property: item.property,
+        value: item.value,
+        dependencyType: item.dependencyType,
+        matchedElementLabels: item.matchedElementLabels,
+        stylesheetHref: item.stylesheetHref,
+      })),
+  );
+
+  console.log(
     "[WCX PSEUDO-ELEMENT DIAGNOSTIC]",
     result.dependencies
       .filter((item) =>
