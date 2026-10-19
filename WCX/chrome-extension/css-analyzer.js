@@ -4692,6 +4692,34 @@
 
           winner.cascadeRank = getCascadeRank(winner);
 
+          const winnerStateDependencies = safeArray(
+            winner.stateDependencies || winner.rule?.stateDependencies,
+          );
+
+          const winnerStateActive = winnerStateDependencies.length
+            ? isStateSelectorActive(winner.selector, element)
+            : false;
+
+          if (
+            winner.selector?.includes(".snip1571:hover > img") ||
+            winner.selector?.includes(".snip1571:hover figcaption::before")
+          ) {
+            console.log("[WCX WINNER STATE TRACE]", {
+              selector: winner.selector,
+              elementTag: element.tagName,
+              elementClass:
+                typeof element.className === "string"
+                  ? element.className
+                  : element.className?.baseVal || "",
+              stateDependencies: winnerStateDependencies,
+              stateActive: winnerStateActive,
+              elementHovered: element.matches?.(":hover"),
+              figureHovered: element
+                .closest?.("figure.snip1571")
+                ?.matches(":hover"),
+            });
+          }
+
           winners.push({
             element,
 
@@ -4798,17 +4826,7 @@
              * Track whether a state/pseudo selector is
              * currently active for the matched element.
              */
-            stateActive: (() => {
-              const stateDependencies = safeArray(
-                winner.stateDependencies || winner.rule?.stateDependencies,
-              );
-
-              if (!stateDependencies.length) {
-                return false;
-              }
-
-              return isStateSelectorActive(winner.selector, element);
-            })(),
+            stateActive: winnerStateActive,
 
             variableReferences: (() => {
               const stored = safeArray(winner.variableReferences);
