@@ -2407,6 +2407,31 @@
               );
 
               pseudoElementRelevant = effectiveMatchedElements.length > 0;
+
+              if (
+                selector.includes(".snip1571:hover figcaption::before") ||
+                selector.includes(".snip1571.hover figcaption::before")
+              ) {
+                console.log("[WCX HOVER STRUCTURAL DIAGNOSTIC]", {
+                  selector,
+                  stateDependencies,
+                  structuralSelector,
+                  componentElementsCount: context.elements.length,
+                  componentElements: context.elements.map((el) => ({
+                    tag: el.tagName,
+                    className:
+                      typeof el.className === "string"
+                        ? el.className
+                        : el.className?.baseVal || "",
+                    isFigure: el.matches?.("figure.snip1571") || false,
+                    hasFigcaption: !!el.querySelector?.("figcaption"),
+                  })),
+                  matchedElements: matchedElements.length,
+                  effectiveMatchedElements: effectiveMatchedElements.length,
+                  stateSelectorRelevant,
+                  pseudoElementRelevant,
+                });
+              }
             }
           }
 
@@ -4913,6 +4938,24 @@
         winner.property,
         winner.pseudoElement,
       );
+
+      if (
+        winner.property === "opacity" ||
+        (winner.property === "right" && winner.pseudoElement === "before")
+      ) {
+        console.log("[WCX WINNER VALIDATION DEBUG]", {
+          selector: winner.selector,
+          property: winner.property,
+          sourceValue: winner.value,
+          pseudoElement: winner.pseudoElement,
+          stateDependencies: winner.stateDependencies,
+          stateActive: winner.stateActive,
+          elementTag: element.tagName,
+          elementClass: element.className,
+          computedValue,
+          matchesComputed: winner.matchesComputed,
+        });
+      }
 
       winner.computedValue = computedValue;
 
