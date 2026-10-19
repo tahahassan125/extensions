@@ -951,6 +951,23 @@ function analyzeSelectedCSS(data) {
 
   console.log("🔥 WCX CSS V2 ANALYSIS:", result);
 
+  console.table(
+    result.reconstructionModel?.declarations
+      ?.filter(
+        (d) =>
+          d.originalSelector?.includes("snip1571:hover") ||
+          (d.property === "right" && d.value === "-5px"),
+      )
+      .map((d) => ({
+        property: d.property,
+        value: d.value,
+        stateActive: d.stateActive,
+        stateDependencies: d.stateDependencies?.join(", "),
+        selector: d.selector,
+        isolatedSelector: d.isolatedSelector,
+      })),
+  );
+
   console.log(
     "[WCX PSEUDO WINNER CHECK]",
     result.dependencies

@@ -2217,11 +2217,55 @@
      *   :hover -> .modal__close-button
      *   matched element -> .icon
      */
-    try {
-      const matchedElements = document.querySelectorAll(selector);
 
-      return Array.from(matchedElements).includes(element);
+    try {
+      // Remove the pseudo-element suffix because ::before/::after
+      // are not actual DOM elements.
+      const structuralSelector = selector
+        .replace(
+          /::(before|after|first-letter|first-line|marker|placeholder|selection)\b/gi,
+          "",
+        )
+        .trim();
+
+      // Find the actual target element(s).
+      const matchedElements = document.querySelectorAll(structuralSelector);
+
+      // The target itself must be matched.
+      if (Array.from(matchedElements).includes(element)) {
+        return true;
+      }
+
+      // For selectors such as ".snip1571:hover figcaption",
+      // check whether the relevant ancestor is hovered.
+      const hoverMatch = selector.match(/^(.*?):hover\b/);
+
+      if (hoverMatch) {
+        const hoverSelector = hoverMatch[1].trim();
+
+        let hoverTargets = [];
+
+        try {
+          hoverTargets = Array.from(document.querySelectorAll(hoverSelector));
+        } catch (error) {
+          return false;
+        }
+
+        return hoverTargets.some((target) => {
+          try {
+            return (
+              target.matches(":hover") &&
+              (target === element || target.contains(element))
+            );
+          } catch (error) {
+            return false;
+          }
+        });
+      }
+
+      return false;
     } catch (error) {
+      console.warn("[WCX STATE ERROR]", selector, error);
       return false;
     }
   }
