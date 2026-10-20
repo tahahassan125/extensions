@@ -2408,6 +2408,25 @@
 
               pseudoElementRelevant = effectiveMatchedElements.length > 0;
 
+              if (selector === ".snip1571 ::before") {
+                console.log("[WCX DESCENDANT PSEUDO MATCH]", {
+                  selector,
+                  structuralSelector,
+                  pseudoElement: pseudoElementMatch[1],
+                  effectiveMatchedElements: effectiveMatchedElements.map(
+                    (el) => ({
+                      tagName: el.tagName,
+                      className:
+                        typeof el.className === "string"
+                          ? el.className
+                          : el.className?.baseVal || "",
+                      isFigure: el.matches?.("figure.snip1571") || false,
+                      isFigcaption: el.matches?.("figcaption") || false,
+                    }),
+                  ),
+                });
+              }
+
               if (
                 selector.includes(".snip1571:hover figcaption::before") ||
                 selector.includes(".snip1571.hover figcaption::before")
@@ -4956,6 +4975,30 @@
         winner.property,
         winner.pseudoElement,
       );
+      // TEMPORARY: Transition context diagnostic
+
+      if (
+        winner.selector === ".snip1571 ::before" &&
+        winner.property === "transition"
+      ) {
+        console.log("[WCX TRANSITION CONTEXT DEBUG]", {
+          selector: winner.selector,
+          property: winner.property,
+          sourceValue: winner.value,
+          pseudoElement: winner.pseudoElement,
+          elementTag: winner.element?.tagName,
+          elementClass: winner.element?.className,
+          computedValue,
+          browserTransition: winner.element
+            ? getComputedStyle(
+                winner.element,
+                winner.pseudoElement
+                  ? `::${winner.pseudoElement.replace(/^::?/, "")}`
+                  : null,
+              ).getPropertyValue("transition")
+            : null,
+        });
+      }
 
       if (
         winner.property === "opacity" ||
