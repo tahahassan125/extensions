@@ -4983,6 +4983,15 @@
       winner.matchesComputed =
         normalizeWhitespace(winner.value) === computedValue;
 
+      console.log("[WCX POST-COMPARISON TRACE]", {
+        selector: winner.selector,
+        property: winner.property,
+        sourceValue: winner.value,
+        computedValue: computedValue,
+        stateActive: winner.stateActive,
+        matchesComputed: winner.matchesComputed,
+      });
+
       /*
        * R1 semantic browser comparison.
        *
@@ -5012,6 +5021,15 @@
       if (winner.variableDependent && computedValue) {
         winner.matchesComputed = true;
       }
+
+      // TEMPORARY: Final validation trace
+      console.log("[WCX FINAL VALIDATION TRACE]", {
+        selector: winner.selector,
+        property: winner.property,
+        stateActive: winner.stateActive,
+        matchesComputed: winner.matchesComputed,
+        resultType: typeof winner.matchesComputed,
+      });
     }
   }
 
