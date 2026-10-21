@@ -2391,7 +2391,9 @@
           if (pseudoElementMatch) {
             const pseudoElement = pseudoElementMatch[0];
 
-            let structuralSelector = selector.replace(pseudoElement, "").trim();
+            let structuralSelector = selector
+              .replace(pseudoElement, ":where(*)")
+              .trim();
 
             // Remove state pseudo-classes for structural matching only.
             for (const pseudo of stateDependencies) {
@@ -4970,6 +4972,21 @@
         continue;
       }
 
+      if (
+        winner.selector === ".snip1571 ::before" &&
+        winner.property === "transition"
+      ) {
+        console.log("[WCX PSEUDO WINNER TARGET]", {
+          selector: winner.selector,
+          property: winner.property,
+          pseudoElement: winner.pseudoElement,
+          elementTag: winner.element?.tagName,
+          elementClass: winner.element?.className,
+          sourceValue: winner.value,
+          computedValue: winner.computedValue,
+        });
+      }
+
       const computedValue = getComputedPropertyValue(
         element,
         winner.property,
@@ -6747,6 +6764,7 @@
      * The source selector directly affects the selected
      * component root.
      */
+
     if (matchedLabels.includes(rootLabel)) {
       const rootStateMatch = normalizedSelector.match(
         /:(hover|focus-visible|focus-within|focus|active|disabled|checked|target)(?![\w-])/,
@@ -6754,7 +6772,15 @@
 
       const rootPseudoState = rootStateMatch ? rootStateMatch[0] : "";
 
-      return `:where(${rootSelector})${rootPseudoState}`;
+      const rootPseudoElementMatch = normalizedSelector.match(
+        /:{1,2}(before|after|first-letter|first-line|marker|placeholder|selection)\b/i,
+      );
+
+      const rootPseudoElement = rootPseudoElementMatch
+        ? rootPseudoElementMatch[0]
+        : "";
+
+      return `:where(${rootSelector})${rootPseudoState}${rootPseudoElement}`;
     }
 
     /*
@@ -6773,7 +6799,7 @@
         const pseudoElement = pseudoElementMatch[0];
 
         let structuralSelector = normalizedSelector
-          .replace(pseudoElement, "")
+          .replace(pseudoElement, ":where(*)")
           .trim();
 
         // Preserve state pseudo-classes separately.
@@ -6849,6 +6875,12 @@
         scopedSelector = scopedSelector.replace(rootPseudoState, "").trim();
       }
 
+      console.log("[WCX Selector Debug]", {
+        originalSelector: normalizedSelector,
+        matchedElementLabels: matchedLabels,
+        isolatedSelector: `:where(${rootSelector})${rootPseudoState} ${scopedSelector}`,
+      });
+
       return `:where(${rootSelector})${rootPseudoState} ${scopedSelector}`;
     }
 
@@ -6857,6 +6889,48 @@
      */
     return "";
   }
+
+  function testBuildIsolatedSelector() {
+    const root = document.querySelector("figure.snip1571");
+
+    if (!root) {
+      console.error("[WCX Test] figure.snip1571 not found.");
+      return;
+    }
+
+    const tests = [
+      {
+        selector: ".snip1571:hover:focus::before",
+        matched: [{ label: "figure" }],
+      },
+      {
+        selector: ".snip1571:hover:focus figcaption::after",
+        matched: [{ label: "figcaption" }],
+      },
+      {
+        selector: "a:active",
+        matched: [{ label: "a" }],
+      },
+      {
+        selector: "a:focus",
+        matched: [{ label: "a" }],
+      },
+    ];
+
+    const results = tests.map(({ selector, matched }) => {
+      const isolatedSelector = buildIsolatedSelector(selector, root, matched);
+
+      return {
+        originalSelector: selector,
+        isolatedSelector,
+      };
+    });
+
+    console.table(results);
+    return results;
+  }
+  // TEMPORARY TEST
+  testBuildIsolatedSelector();
 
   function buildReconstructedDeclarationCSS(declaration) {
     if (!declaration) {
