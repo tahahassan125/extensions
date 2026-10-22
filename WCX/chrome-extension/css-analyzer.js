@@ -6816,7 +6816,6 @@
 
       return selector.trim();
     }
-    
 
     function extractTopLevelRootPseudoStates(compound) {
       const states = new Set([
@@ -7023,6 +7022,32 @@
       return result;
     }
 
+    function removeRootTagAndClassAttributes(compound) {
+      let result = compound;
+
+      // Remove the root tag only at the start of the compound.
+      const rootTag = root.tagName.toLowerCase();
+
+      const tagPattern = new RegExp(`^${CSS.escape(rootTag)}(?=[.#:[\\s]|$)`);
+
+      result = result.replace(tagPattern, "");
+
+      // Remove class attribute selectors only when they match
+      // the selected root. Preserve all other attributes.
+      const classAttributePattern =
+        /\[\s*class\s*(?:[*^$~|]?=)\s*(?:"[^"]*"|'[^']*'|[^\]\s]+)\s*(?:i|s)?\s*\]/gi;
+
+      result = result.replace(classAttributePattern, (attributeSelector) => {
+        try {
+          return root.matches(attributeSelector) ? "" : attributeSelector;
+        } catch (error) {
+          return attributeSelector;
+        }
+      });
+
+      return result;
+    }
+
     function extractRootStateAndRemainder(selector) {
       const firstCompound = getFirstSelectorCompound(selector);
 
@@ -7051,8 +7076,11 @@
 
       // Preserve other root conditions, including functional
       // pseudo-classes such as :is(), :not(), :where(), and :has().
+      const compoundWithoutRootIdentity =
+        removeRootTagAndClassAttributes(firstCompound);
+
       const preservedRootConditions = removeTopLevelRootClassesAndStates(
-        firstCompound,
+        compoundWithoutRootIdentity,
         rootClasses,
       );
 
