@@ -6752,6 +6752,320 @@
       return "";
     }
 
+    // Helper function
+    function removeRootClasses(selector) {
+      let result = selector;
+
+      const rootClasses = safeString(root.className)
+        .split(/\s+/)
+        .filter((name) => name && !name.startsWith("wcx-"));
+
+      for (const className of rootClasses) {
+        const escapedClass = CSS.escape(className);
+
+        const classPattern = new RegExp(
+          `(^|[\\s>+~])\\.${escapedClass}(?=[\\s>+~.#:[\\]]|$)`,
+        );
+
+        result = result.replace(classPattern, "$1");
+      }
+
+      return result.trim();
+    }
+
+    function getFirstSelectorCompound(selector) {
+      let bracketDepth = 0;
+      let parenDepth = 0;
+      let quote = "";
+      let escaped = false;
+
+      for (let i = 0; i < selector.length; i++) {
+        const char = selector[i];
+
+        if (escaped) {
+          escaped = false;
+          continue;
+        }
+
+        if (char === "\\") {
+          escaped = true;
+          continue;
+        }
+
+        if (quote) {
+          if (char === quote) quote = "";
+          continue;
+        }
+
+        if (char === '"' || char === "'") {
+          quote = char;
+          continue;
+        }
+
+        if (char === "[") bracketDepth++;
+        else if (char === "]") bracketDepth--;
+        else if (char === "(") parenDepth++;
+        else if (char === ")") parenDepth--;
+
+        if (bracketDepth === 0 && parenDepth === 0) {
+          if (/\s|[>+~,]/.test(char)) {
+            return selector.slice(0, i).trim();
+          }
+        }
+      }
+
+      return selector.trim();
+    }
+    
+
+    function extractTopLevelRootPseudoStates(compound) {
+      const states = new Set([
+        "hover",
+        "focus-visible",
+        "focus-within",
+        "focus",
+        "active",
+        "disabled",
+        "checked",
+        "target",
+      ]);
+
+      let result = "";
+      let bracketDepth = 0;
+      let parenDepth = 0;
+      let quote = "";
+      let escaped = false;
+
+      for (let i = 0; i < compound.length; i++) {
+        const char = compound[i];
+
+        if (escaped) {
+          escaped = false;
+          continue;
+        }
+
+        if (char === "\\") {
+          escaped = true;
+          continue;
+        }
+
+        if (quote) {
+          if (char === quote) quote = "";
+          continue;
+        }
+
+        if (char === '"' || char === "'") {
+          quote = char;
+          continue;
+        }
+
+        if (char === "[") {
+          bracketDepth++;
+          continue;
+        }
+
+        if (char === "]") {
+          bracketDepth--;
+          continue;
+        }
+
+        if (char === "(") {
+          parenDepth++;
+          continue;
+        }
+
+        if (char === ")") {
+          parenDepth--;
+          continue;
+        }
+
+        // Ignore pseudo-classes inside :is(), :not(), etc.
+        if (bracketDepth !== 0 || parenDepth !== 0) {
+          continue;
+        }
+
+        if (char !== ":") continue;
+
+        // Skip pseudo-elements (::before, ::after, etc.).
+        if (compound[i + 1] === ":") continue;
+
+        const match = compound.slice(i + 1).match(/^[-\w]+/);
+
+        if (match && states.has(match[0])) {
+          result += `:${match[0]}`;
+          i += match[0].length;
+        }
+      }
+
+      return result;
+    }
+
+    function removeTopLevelRootClassesAndStates(compound, rootClasses) {
+      let result = "";
+      let bracketDepth = 0;
+      let parenDepth = 0;
+      let quote = "";
+      let escaped = false;
+
+      const rootClassSet = new Set(rootClasses);
+
+      for (let i = 0; i < compound.length; i++) {
+        const char = compound[i];
+
+        if (escaped) {
+          result += char;
+          escaped = false;
+          continue;
+        }
+
+        if (char === "\\") {
+          result += char;
+          escaped = true;
+          continue;
+        }
+
+        if (quote) {
+          result += char;
+          if (char === quote) quote = "";
+          continue;
+        }
+
+        if (char === '"' || char === "'") {
+          result += char;
+          quote = char;
+          continue;
+        }
+
+        if (char === "[") {
+          bracketDepth++;
+          result += char;
+          continue;
+        }
+
+        if (char === "]") {
+          bracketDepth--;
+          result += char;
+          continue;
+        }
+
+        if (char === "(") {
+          parenDepth++;
+          result += char;
+          continue;
+        }
+
+        if (char === ")") {
+          parenDepth--;
+          result += char;
+          continue;
+        }
+
+        // Never alter content inside attributes or functional pseudo-classes.
+        if (bracketDepth !== 0 || parenDepth !== 0) {
+          result += char;
+          continue;
+        }
+
+        // Remove only root classes at the top level.
+        if (char === ".") {
+          const match = compound.slice(i + 1).match(/^(?:\\.|[\w-])+/);
+
+          if (match) {
+            const rawClass = match[0];
+            let className = rawClass;
+
+            try {
+              const probe = document.createElement("i");
+              probe.className = rawClass;
+              className = probe.className;
+            } catch (_) {
+              // Keep the raw token if decoding isn't available.
+            }
+
+            if (rootClassSet.has(className)) {
+              i += rawClass.length;
+              continue;
+            }
+          }
+        }
+
+        // Remove direct root state pseudo-classes, but preserve :is(...).
+        if (char === ":") {
+          const match = compound.slice(i + 1).match(/^[-\w]+/);
+
+          if (match) {
+            const name = match[0];
+            const isState = [
+              "hover",
+              "focus-visible",
+              "focus-within",
+              "focus",
+              "active",
+              "disabled",
+              "checked",
+              "target",
+            ].includes(name);
+
+            if (
+              isState &&
+              compound[i - 1] !== ":" &&
+              compound[i + 1 + name.length] !== "("
+            ) {
+              i += name.length;
+              continue;
+            }
+          }
+        }
+
+        result += char;
+      }
+
+      return result;
+    }
+
+    function extractRootStateAndRemainder(selector) {
+      const firstCompound = getFirstSelectorCompound(selector);
+
+      const rootClasses = safeString(root.className)
+        .split(/\s+/)
+        .filter((name) => name && !name.startsWith("wcx-"));
+
+      const containsRootClass = rootClasses.some((className) => {
+        const escapedClass = CSS.escape(className);
+        const pattern = new RegExp(`\\.${escapedClass}(?=[.#:[\\]]|$)`);
+
+        return pattern.test(firstCompound);
+      });
+
+      // If the first compound does not identify the root,
+      // preserve the complete source selector.
+      if (!containsRootClass) {
+        return {
+          rootPseudoState: "",
+          remainder: selector.trim(),
+        };
+      }
+
+      // Extract only direct, top-level states from the root.
+      const rootPseudoState = extractTopLevelRootPseudoStates(firstCompound);
+
+      // Preserve other root conditions, including functional
+      // pseudo-classes such as :is(), :not(), :where(), and :has().
+      const preservedRootConditions = removeTopLevelRootClassesAndStates(
+        firstCompound,
+        rootClasses,
+      );
+
+      const remainder = selector
+        .slice(firstCompound.length)
+        .replace(/^\s+/, "");
+
+      return {
+        rootPseudoState: `${preservedRootConditions}${rootPseudoState}`,
+        remainder,
+      };
+    }
+
     const rootLabel = getNodeLabel(root);
 
     const matchedLabels = safeArray(matchedElementDetails)
@@ -6766,12 +7080,6 @@
      */
 
     if (matchedLabels.includes(rootLabel)) {
-      const rootStateMatch = normalizedSelector.match(
-        /:(hover|focus-visible|focus-within|focus|active|disabled|checked|target)(?![\w-])/,
-      );
-
-      const rootPseudoState = rootStateMatch ? rootStateMatch[0] : "";
-
       const rootPseudoElementMatch = normalizedSelector.match(
         /:{1,2}(before|after|first-letter|first-line|marker|placeholder|selection)\b/i,
       );
@@ -6780,7 +7088,43 @@
         ? rootPseudoElementMatch[0]
         : "";
 
-      return `:where(${rootSelector})${rootPseudoState}${rootPseudoElement}`;
+      // Preserve ALL root pseudo-classes, not just the first one.
+      let rootSelectorSuffix = removeRootClasses(normalizedSelector);
+
+      // Remove the selected root's classes from the source selector.
+      const rootClasses = safeString(root.className)
+        .split(/\s+/)
+        .filter((className) => className && !className.startsWith("wcx-"));
+
+      for (const className of rootClasses) {
+        const escapedClass = CSS.escape(className);
+
+        const classPattern = new RegExp(
+          `(^|[\\s>+~])\\.${escapedClass}(?=[\\s>+~.#:[\\]]|$)`,
+        );
+
+        if (classPattern.test(rootSelectorSuffix)) {
+          rootSelectorSuffix = rootSelectorSuffix.replace(classPattern, "$1");
+        }
+      }
+
+      // Remove the root tag from the beginning if present.
+      const rootTagPattern = new RegExp(
+        `^${CSS.escape(root.tagName.toLowerCase())}(?=[.#:[\\s]|$)`,
+      );
+
+      rootSelectorSuffix = rootSelectorSuffix
+        .replace(rootTagPattern, "")
+        .trim();
+
+      // Keep the pseudo-element only once.
+      if (rootPseudoElement) {
+        rootSelectorSuffix = rootSelectorSuffix
+          .replace(rootPseudoElement, "")
+          .trim();
+      }
+
+      return `:where(${rootSelector})${rootSelectorSuffix}${rootPseudoElement}`;
     }
 
     /*
@@ -6798,82 +7142,22 @@
       if (pseudoElementMatch) {
         const pseudoElement = pseudoElementMatch[0];
 
-        let structuralSelector = normalizedSelector
+        const structuralSelector = normalizedSelector
           .replace(pseudoElement, ":where(*)")
           .trim();
 
-        // Preserve state pseudo-classes separately.
-        const rootStateMatch = structuralSelector.match(
-          /:(hover|focus-visible|focus-within|focus|active|disabled|checked|target)(?![\w-])/,
-        );
+        const { rootPseudoState, remainder } =
+          extractRootStateAndRemainder(structuralSelector);
 
-        const rootPseudoState = rootStateMatch ? rootStateMatch[0] : "";
-
-        if (rootPseudoState) {
-          structuralSelector = structuralSelector
-            .replace(rootPseudoState, "")
-            .trim();
-        }
-
-        const rootClasses = safeString(root.className)
-          .split(/\s+/)
-          .filter((className) => className && !className.startsWith("wcx-"));
-
-        let scopedStructuralSelector = structuralSelector;
-
-        for (const className of rootClasses) {
-          const escapedClass = CSS.escape(className);
-
-          const classPattern = new RegExp(
-            `(^|[\\s>+~])\\.${escapedClass}(?=[\\s>+~.#:[\\]]|$)`,
-          );
-
-          if (classPattern.test(scopedStructuralSelector)) {
-            scopedStructuralSelector = scopedStructuralSelector.replace(
-              classPattern,
-              "$1",
-            );
-          }
-        }
-
-        scopedStructuralSelector = scopedStructuralSelector.trim();
+        let scopedStructuralSelector = remainder.trim();
 
         if (scopedStructuralSelector) {
           return `:where(${rootSelector})${rootPseudoState} ${scopedStructuralSelector}${pseudoElement}`;
         }
       }
 
-      // Remove the selected root's classes from the source selector.
-      let scopedSelector = normalizedSelector;
-
-      const rootClasses = safeString(root.className)
-        .split(/\s+/)
-        .filter((className) => className && !className.startsWith("wcx-"));
-
-      for (const className of rootClasses) {
-        const escapedClass = CSS.escape(className);
-
-        const classPattern = new RegExp(
-          `(^|[\\s>+~])\\.${escapedClass}(?=[\\s>+~.#:[\\]]|$)`,
-        );
-
-        if (classPattern.test(scopedSelector)) {
-          scopedSelector = scopedSelector.replace(classPattern, "$1");
-        }
-      }
-
-      scopedSelector = scopedSelector.trim();
-
-      // Preserve root state, such as :hover, before descendant combinators.
-      const rootStateMatch = scopedSelector.match(
-        /:(hover|focus-visible|focus-within|focus|active|disabled|checked|target)(?![\w-])/,
-      );
-
-      const rootPseudoState = rootStateMatch ? rootStateMatch[0] : "";
-
-      if (rootPseudoState) {
-        scopedSelector = scopedSelector.replace(rootPseudoState, "").trim();
-      }
+      const { rootPseudoState, remainder: scopedSelector } =
+        extractRootStateAndRemainder(normalizedSelector);
 
       console.log("[WCX Selector Debug]", {
         originalSelector: normalizedSelector,
@@ -6890,6 +7174,63 @@
     return "";
   }
 
+  function compareSelectorMatches(originalSelector, isolatedSelector, root) {
+    try {
+      const originalMatches = Array.from(
+        document.querySelectorAll(originalSelector),
+      ).filter((element) => root.contains(element) || element === root);
+
+      const isolatedMatches = Array.from(
+        document.querySelectorAll(isolatedSelector),
+      ).filter((element) => root.contains(element) || element === root);
+
+      const describe = (element) => {
+        if (element.id) return `#${element.id}`;
+
+        const classes = Array.from(element.classList || [])
+          .map((name) => `.${name}`)
+          .join("");
+
+        return `${element.tagName.toLowerCase()}${classes}`;
+      };
+
+      const originalSet = new Set(originalMatches);
+      const isolatedSet = new Set(isolatedMatches);
+
+      const missing = originalMatches.filter(
+        (element) => !isolatedSet.has(element),
+      );
+
+      const extra = isolatedMatches.filter(
+        (element) => !originalSet.has(element),
+      );
+
+      return {
+        originalSelector,
+        isolatedSelector,
+        originalCount: originalMatches.length,
+        isolatedCount: isolatedMatches.length,
+        matchEquivalent:
+          originalMatches.length > 0 &&
+          originalMatches.length === isolatedMatches.length &&
+          missing.length === 0 &&
+          extra.length === 0,
+
+        inconclusive:
+          originalMatches.length === 0 && isolatedMatches.length === 0,
+        missingFromIsolated: missing.map(describe),
+        extraInIsolated: extra.map(describe),
+      };
+    } catch (error) {
+      return {
+        originalSelector,
+        isolatedSelector,
+        matchEquivalent: false,
+        error: error.message,
+      };
+    }
+  }
+
   function testBuildIsolatedSelector() {
     const root = document.querySelector("figure.snip1571");
 
@@ -6901,7 +7242,7 @@
     const tests = [
       {
         selector: ".snip1571:hover:focus::before",
-        matched: [{ label: "figure" }],
+        matched: [{ label: getNodeLabel(root) }],
       },
       {
         selector: ".snip1571:hover:focus figcaption::after",
@@ -6915,7 +7256,73 @@
         selector: "a:focus",
         matched: [{ label: "a" }],
       },
+      {
+        selector: ".snip1571:hover figcaption:focus::after",
+        matched: [{ label: "figcaption" }],
+      },
+
+      {
+        // Test 6: Child combinator with different states.
+        selector: ".snip1571:hover > figcaption:focus",
+        matched: [{ label: "figcaption" }],
+      },
+      {
+        // Test 7: Same state on root and descendant.
+        selector: ".snip1571:hover figcaption:hover::after",
+        matched: [{ label: "figcaption" }],
+      },
+      {
+        // Test 8: Multiple combinators and pseudo-element.
+        selector: ".snip1571:hover > div a:focus::before",
+        matched: [{ label: "a" }],
+      },
+      {
+        // Test 9: :not() on descendant with pseudo-element.
+        selector: ".snip1571:hover figcaption:not(.hidden)::after",
+        matched: [{ label: "figcaption" }],
+      },
+      {
+        // Test 10: :is() with comma-separated states.
+        selector: ".snip1571:is(:hover, :focus) figcaption::after",
+        matched: [{ label: "figcaption" }],
+      },
+      {
+        // Test 11: Basic descendant selector.
+        selector: ".snip1571 figcaption",
+        matched: [{ label: "figcaption" }],
+      },
+      {
+        // Test 12: Child combinator.
+        selector: ".snip1571 > figcaption",
+        matched: [{ label: "figcaption" }],
+      },
+      {
+        // Test 13: Functional pseudo-class without interaction state.
+        selector: ".snip1571:not(.hidden) figcaption",
+        matched: [{ label: "figcaption" }],
+      },
+      {
+        // Test 14: Attribute selector on an existing attribute.
+        selector: ".snip1571 figcaption",
+        matched: [{ label: "figcaption" }],
+      },
+      {
+        // Test 15: Class attribute substring selector.
+        selector: 'figure[class*="snip1571"] figcaption',
+        matched: [{ label: "figcaption" }],
+      },
+      {
+        // Test 16: :is() with static alternatives.
+        selector: ".snip1571:is(figure, div) figcaption",
+        matched: [{ label: "figcaption" }],
+      },
     ];
+
+    console.log("[WCX Test Root Check]", {
+      rootLabel: getNodeLabel(root),
+      firstTestLabel: tests[0].matched[0].label,
+      rootClasses: Array.from(root.classList),
+    });
 
     const results = tests.map(({ selector, matched }) => {
       const isolatedSelector = buildIsolatedSelector(selector, root, matched);
@@ -6927,7 +7334,23 @@
     });
 
     console.table(results);
-    return results;
+
+    // Real DOM matching comparison
+    const matchResults = results.map((test) =>
+      compareSelectorMatches(
+        test.originalSelector,
+        test.isolatedSelector,
+        root,
+      ),
+    );
+
+    console.log("[WCX Real DOM Matching Results]");
+    console.table(matchResults);
+
+    return {
+      selectorResults: results,
+      matchResults,
+    };
   }
   // TEMPORARY TEST
   testBuildIsolatedSelector();
