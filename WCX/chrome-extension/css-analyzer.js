@@ -4709,6 +4709,30 @@
 
           const winner = candidates[candidates.length - 1];
 
+          if (winner.selector?.includes("snip1571")) {
+            console.log("[WCX WINNER METADATA SOURCE]", {
+              selector: winner.selector,
+              ruleStateDependencies: winner.rule?.stateDependencies,
+              candidateStateDependencies: winner.stateDependencies,
+              ruleKeys: winner.rule ? Object.keys(winner.rule) : [],
+              winnerKeys: Object.keys(winner),
+            });
+          }
+
+          if (winner.selector?.includes(".snip1571:hover")) {
+            console.log("[WCX HOVER WINNER DETAILS]", {
+              selector: winner.selector,
+              property,
+              pseudoElement,
+              value: winner.value,
+              winnerStateDependencies: winner.stateDependencies,
+              ruleStateDependencies: winner.rule?.stateDependencies,
+              winnerStateActive: winner.stateActive,
+              ruleSelector: winner.rule?.selector,
+              hasRule: !!winner.rule,
+            });
+          }
+
           winner.status = "winning";
 
           winner.cascadeRank = getCascadeRank(winner);
@@ -7028,12 +7052,12 @@
       // Remove the root tag only at the start of the compound.
       const rootTag = root.tagName.toLowerCase();
 
-      const tagPattern = new RegExp(`^${CSS.escape(rootTag)}(?=[.#:[\\s]|$)`);
+      const tagPattern = new RegExp(`^${CSS.escape(rootTag)}(?=[.#:\\s\\[]|$)`);
 
       result = result.replace(tagPattern, "");
 
-      // Remove class attribute selectors only when they match
-      // the selected root. Preserve all other attributes.
+      // Match class attribute selectors such as:
+      // [class*="snip1571"], [class~="snip1571"]
       const classAttributePattern =
         /\[\s*class\s*(?:[*^$~|]?=)\s*(?:"[^"]*"|'[^']*'|[^\]\s]+)\s*(?:i|s)?\s*\]/gi;
 
@@ -7062,31 +7086,40 @@
         return pattern.test(firstCompound);
       });
 
+      let matchesRootByCompound = false;
+
+      try {
+        matchesRootByCompound = root.matches(firstCompound);
+      } catch (error) {
+        matchesRootByCompound = false;
+      }
+
       // If the first compound does not identify the root,
       // preserve the complete source selector.
-      if (!containsRootClass) {
+      if (!containsRootClass && !matchesRootByCompound) {
         return {
           rootPseudoState: "",
           remainder: selector.trim(),
         };
       }
 
-      // Extract only direct, top-level states from the root.
-      const rootPseudoState = extractTopLevelRootPseudoStates(firstCompound);
-
-      // Preserve other root conditions, including functional
-      // pseudo-classes such as :is(), :not(), :where(), and :has().
+      // Remove the root's tag and matching class attribute selectors.
       const compoundWithoutRootIdentity =
         removeRootTagAndClassAttributes(firstCompound);
 
+      // Preserve remaining root classes, conditions, and functional pseudo-classes.
       const preservedRootConditions = removeTopLevelRootClassesAndStates(
         compoundWithoutRootIdentity,
         rootClasses,
       );
 
+      // Keep the selector content that follows the first compound.
       const remainder = selector
         .slice(firstCompound.length)
         .replace(/^\s+/, "");
+
+      // Extract only direct, top-level states from the root.
+      const rootPseudoState = extractTopLevelRootPseudoStates(firstCompound);
 
       return {
         rootPseudoState: `${preservedRootConditions}${rootPseudoState}`,
@@ -7233,19 +7266,23 @@
         (element) => !originalSet.has(element),
       );
 
+      const bothEmpty =
+        originalMatches.length === 0 && isolatedMatches.length === 0;
+
+      const matchEquivalent =
+        !bothEmpty &&
+        originalMatches.length === isolatedMatches.length &&
+        missing.length === 0 &&
+        extra.length === 0;
+
       return {
         originalSelector,
         isolatedSelector,
         originalCount: originalMatches.length,
         isolatedCount: isolatedMatches.length,
-        matchEquivalent:
-          originalMatches.length > 0 &&
-          originalMatches.length === isolatedMatches.length &&
-          missing.length === 0 &&
-          extra.length === 0,
-
-        inconclusive:
-          originalMatches.length === 0 && isolatedMatches.length === 0,
+        matchEquivalent,
+        inconclusive: bothEmpty,
+        status: bothEmpty ? "INCONCLUSIVE" : matchEquivalent ? "PASS" : "FAIL",
         missingFromIsolated: missing.map(describe),
         extraInIsolated: extra.map(describe),
       };
@@ -7254,18 +7291,40 @@
         originalSelector,
         isolatedSelector,
         matchEquivalent: false,
+        inconclusive: false,
+        status: "ERROR",
         error: error.message,
       };
     }
   }
 
   function testBuildIsolatedSelector() {
-    const root = document.querySelector("figure.snip1571");
+    const figures = [...document.querySelectorAll("figure.snip1571")];
+
+    const root = figures[13] || figures[0];
 
     if (!root) {
       console.error("[WCX Test] figure.snip1571 not found.");
       return;
     }
+
+    console.log("[WCX Hover Query At Test Start]", {
+      hoveredFigureExists: !!document.querySelector("figure.snip1571:hover"),
+      hoveredFigureIndex: [
+        ...document.querySelectorAll("figure.snip1571"),
+      ].indexOf(document.querySelector("figure.snip1571:hover")),
+      allFiguresCount: document.querySelectorAll("figure.snip1571").length,
+    });
+
+    console.log("[WCX Selected Root Identity]", {
+      rootIndex: [...document.querySelectorAll("figure.snip1571")].indexOf(
+        root,
+      ),
+      rootIsHovered: root.matches(":hover"),
+      rootIsCurrentHoveredFigure:
+        root === document.querySelector("figure.snip1571:hover"),
+      rootParent: root.parentElement?.className,
+    });
 
     const tests = [
       {
@@ -7350,6 +7409,50 @@
       rootLabel: getNodeLabel(root),
       firstTestLabel: tests[0].matched[0].label,
       rootClasses: Array.from(root.classList),
+    });
+
+    console.log("[WCX Dynamic State Check]", {
+      rootLabel: getNodeLabel(root),
+      rootHovered: root.matches(":hover"),
+      rootFocused: root.matches(":focus"),
+      originalHoverFocusCount: document.querySelectorAll(
+        ".snip1571:hover:focus",
+      ).length,
+      beforePseudoElementStyle: (() => {
+        const style = window.getComputedStyle(root, "::before");
+
+        return {
+          content: style.content,
+          display: style.display,
+          visibility: style.visibility,
+        };
+      })(),
+    });
+
+    console.log("[WCX Dynamic Selector Diagnostics]", {
+      rootIndex: figures.indexOf(root),
+      rootHovered: root.matches(":hover"),
+      rootFocused: root.matches(":focus"),
+      figcaptionCount: root.querySelectorAll("figcaption").length,
+      linksInsideRoot: root.querySelectorAll("a").length,
+      activeElement: document.activeElement
+        ? getNodeLabel(document.activeElement)
+        : null,
+    });
+
+    const figcaption = root.querySelector("figcaption");
+    const link = root.querySelector("a");
+
+    console.log("[WCX Interaction State Check]", {
+      rootHovered: root.matches(":hover"),
+      figcaptionHovered: figcaption?.matches(":hover"),
+      linkFocused: link?.matches(":focus"),
+      linkActive: link?.matches(":active"),
+      rootContainsActiveElement: root.contains(document.activeElement),
+      rootBeforeContent: getComputedStyle(root, "::before").content,
+      figcaptionAfterContent: figcaption
+        ? getComputedStyle(figcaption, "::after").content
+        : null,
     });
 
     const results = tests.map(({ selector, matched }) => {
