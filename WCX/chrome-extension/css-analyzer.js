@@ -4683,6 +4683,14 @@
   }
 
   function determineWinners(elements, declarations) {
+    console.log("[WCX HOVER STATE BEFORE CASCADE]", {
+      hoveredFigure: document.querySelector("figure.snip1571:hover") !== null,
+      hoveredImageOpacity: (() => {
+        const figure = document.querySelector("figure.snip1571:hover");
+        const image = figure?.querySelector("img");
+        return image ? getComputedStyle(image).opacity : null;
+      })(),
+    });
     const cascadeData = buildCascadeMap(elements, declarations);
 
     const map = cascadeData.map;
@@ -4744,6 +4752,26 @@
           const winnerStateActive = winnerStateDependencies.length
             ? isStateSelectorActive(winner.selector, element)
             : false;
+
+          if (winner.selector?.includes(".snip1571:hover")) {
+            console.log("[WCX HOVER STATE DETECTION]", {
+              selector: winner.selector,
+              elementTag: element.tagName,
+              elementMatchesHover: element.matches?.(":hover"),
+              figureMatchesHover: element
+                .closest?.("figure.snip1571")
+                ?.matches(":hover"),
+              stateDependencies: winnerStateDependencies,
+              detectedStateActive: winnerStateActive,
+              isStateSelectorActiveResult: isStateSelectorActive(
+                winner.selector,
+                element,
+              ),
+            });
+          }
+
+          winner.stateDependencies = winnerStateDependencies;
+          winner.stateActive = winnerStateActive;
 
           if (
             winner.selector?.includes(".snip1571:hover > img") ||
@@ -5061,8 +5089,45 @@
 
       winner.computedValue = computedValue;
 
+      // State-independent validation:
+      // Do not compare an inactive state-dependent rule
+      // against the element's current computed value.
+      const validationStateDependencies = safeArray(
+        winner.stateDependencies ||
+          winner.declaration?.stateDependencies ||
+          winner.declaration?.rule?.stateDependencies,
+      );
+
+      const hasInactiveStateDependency =
+        validationStateDependencies.length > 0 && winner.stateActive === false;
+
+      if (hasInactiveStateDependency) {
+        winner.variableReferences = safeArray(winner.variableReferences);
+        winner.variableDependent = winner.variableReferences.length > 0;
+
+        // null means validation was skipped, not failed.
+        winner.matchesComputed = null;
+        winner.validationStatus = "skipped";
+        winner.validationSkippedReason =
+          "State-dependent selector is inactive during analysis";
+
+        console.log("[WCX STATE-DEPENDENT VALIDATION SKIPPED]", {
+          selector: winner.selector,
+          property: winner.property,
+          sourceValue: winner.value,
+          computedValue,
+          stateDependencies: validationStateDependencies,
+          stateActive: winner.stateActive,
+          validationStatus: winner.validationStatus,
+          reason: winner.validationSkippedReason,
+        });
+
+        continue;
+      }
+
       /*
-       * First try exact comparison.
+       * First try exact comparison for normal rules
+       * and state-dependent rules whose state is active.
        */
       winner.matchesComputed =
         normalizeWhitespace(winner.value) === computedValue;
@@ -6727,7 +6792,18 @@
 
       stateDependencies: safeArray(declaration.stateDependencies),
 
-      stateActive: declaration.stateActive === true,
+      stateActive:
+        typeof declaration.stateActive === "boolean"
+          ? declaration.stateActive
+          : null,
+
+      validationStatus: safeString(declaration.validationStatus),
+
+      validationSkippedReason: safeString(declaration.validationSkippedReason),
+
+      computedValue: declaration.computedValue ?? null,
+
+      matchesComputed: declaration.matchesComputed ?? null,
 
       variableReferences: safeArray(declaration.variableReferences),
 
@@ -7982,6 +8058,24 @@
       dependencies: renderingDependencies,
       reconstructionModel,
     };
+
+    console.log(
+      "[WCX CONTEXT CHECK]",
+      window === window.top,
+      window.location.href,
+      typeof window.__WCX_LAST_CSS_ANALYSIS,
+      Object.keys(window.__WCX_LAST_CSS_ANALYSIS || {}),
+    );
+
+    console.log("[WCX GLOBAL READ-BACK]", {
+      exists: !!window.__WCX_LAST_CSS_ANALYSIS,
+      modelExists: !!window.__WCX_LAST_CSS_ANALYSIS?.reconstructionModel,
+      declarationCount:
+        window.__WCX_LAST_CSS_ANALYSIS?.reconstructionModel?.declarations
+          ?.length,
+      href: window.location.href,
+      isTop: window === window.top,
+    });
 
     console.log(
       "[WCX FINAL HOVER RECONSTRUCTION]",

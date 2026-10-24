@@ -951,6 +951,70 @@ function analyzeSelectedCSS(data) {
 
   console.log("🔥 WCX CSS V2 ANALYSIS:", result);
 
+  console.log("[WCX RESULT ACCESS CHECK]", {
+    resultType: typeof result,
+    resultKeys: result && typeof result === "object" ? Object.keys(result) : [],
+    modelKeys: result?.reconstructionModel
+      ? Object.keys(result.reconstructionModel)
+      : [],
+  });
+
+  console.log(
+    "[WCX HOVER DECLARATION METADATA]",
+    result.reconstructionModel.declarations
+      .filter(
+        (d) =>
+          d.originalSelector?.includes("snip1571:hover") ||
+          d.selector?.includes("snip1571:hover"),
+      )
+      .map((d) => ({
+        selector: d.originalSelector || d.selector,
+        property: d.property,
+        value: d.value,
+        stateDependencies: d.stateDependencies,
+        stateActive: d.stateActive,
+        validationStatus: d.validationStatus,
+        validationSkippedReason: d.validationSkippedReason,
+        computedValue: d.computedValue,
+        matchesComputed: d.matchesComputed,
+      })),
+  );
+
+  console.log(
+    "[WCX HOVER RECONSTRUCTION CHECK]",
+    result.reconstructionModel.declarations
+      .filter(
+        (d) =>
+          d.originalSelector?.includes("snip1571:hover") ||
+          d.selector?.includes("snip1571:hover"),
+      )
+      .map((d) => ({
+        selector: d.selector,
+        originalSelector: d.originalSelector,
+        isolatedSelector: d.isolatedSelector,
+        property: d.property,
+        value: d.value,
+        stateDependencies: d.stateDependencies,
+        stateActive: d.stateActive,
+      })),
+  );
+
+  console.log("[WCX HOVER SELECTOR MATCH CHECK]", {
+    root: result.reconstructionModel.root,
+    declarations: result.reconstructionModel.declarations
+      .filter(
+        (d) =>
+          d.originalSelector?.includes("snip1571:hover") ||
+          d.selector?.includes("snip1571:hover"),
+      )
+      .map((d) => ({
+        selector: d.selector,
+        isolatedSelector: d.isolatedSelector,
+        property: d.property,
+        value: d.value,
+      })),
+  });
+
   console.table(
     result.reconstructionModel?.declarations
       ?.filter(
