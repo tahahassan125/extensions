@@ -2221,6 +2221,32 @@
     try {
       // Remove the pseudo-element suffix because ::before/::after
       // are not actual DOM elements.
+
+      if (
+        selector === ".snip1571:hover > img" ||
+        selector === ".snip1571:hover figcaption::before"
+      ) {
+        console.log("[WCX STATE FUNCTION INPUT]", {
+          selector,
+          elementTag: element.tagName,
+          elementClass: element.className,
+          elementMatchesHover: element.matches(":hover"),
+          elementMatchesSelector: (() => {
+            try {
+              return element.matches(
+                selector
+                  .replace(
+                    /::(before|after|first-letter|first-line|marker|placeholder|selection)\b/gi,
+                    "",
+                  )
+                  .trim(),
+              );
+            } catch (error) {
+              return String(error);
+            }
+          })(),
+        });
+      }
       const structuralSelector = selector
         .replace(
           /::(before|after|first-letter|first-line|marker|placeholder|selection)\b/gi,
@@ -2239,7 +2265,15 @@
       // For selectors such as ".snip1571:hover figcaption",
       // check whether the relevant ancestor is hovered.
       const hoverMatch = selector.match(/^(.*?):hover\b/);
-
+      if (selector.includes(".snip1571") && selector.includes(":hover")) {
+        console.log("[WCX TARGET HOVER MATCH DEBUG]", {
+          selector,
+          hoverMatch: hoverMatch ? hoverMatch[0] : null,
+          elementTag: element.tagName,
+          elementClass: element.className,
+          stateDependencies,
+        });
+      }
       if (hoverMatch) {
         const hoverSelector = hoverMatch[1].trim();
 
@@ -2250,6 +2284,20 @@
         } catch (error) {
           return false;
         }
+
+        console.log("[WCX HOVER ANCESTOR DEBUG]", {
+          selector,
+          hoverSelector,
+          targetCount: hoverTargets.length,
+          hoveredTargets: hoverTargets
+            .filter((target) => target.matches(":hover"))
+            .map((target) => ({
+              tagName: target.tagName,
+              className: target.className,
+              isTargetElement: target === element,
+              containsTargetElement: target.contains(element),
+            })),
+        });
 
         return hoverTargets.some((target) => {
           try {

@@ -888,6 +888,55 @@ function analyzeSelectedCSS(data) {
     result = window.WCX_CSS.analyzeRenderingDependencies(element);
 
     console.log(
+      "[WCX RECONSTRUCTION DECLARATIONS]",
+      result.reconstructionModel?.declarations?.slice(0, 15),
+    );
+
+    console.log("[WCX RECONSTRUCTION ROOT]", result.reconstructionModel?.root);
+
+    const declarations = result.reconstructionModel?.declarations || [];
+
+    console.log(
+      "[WCX HOVER DECLARATION CHECK]",
+      declarations.filter((d) =>
+        /:hover|::before|::after|figcaption/i.test(
+          [
+            d.selector,
+            d.property,
+            d.originalProperty,
+            d.target,
+            d.pseudoElement,
+          ]
+            .filter(Boolean)
+            .join(" "),
+        ),
+      ),
+    );
+
+    console.log(
+      "[WCX HOVER DECLARATION DETAILS]",
+      JSON.stringify(
+        declarations
+          .filter((d) =>
+            /:hover|::before|::after|figcaption/i.test(
+              [
+                d.selector,
+                d.property,
+                d.originalProperty,
+                d.target,
+                d.pseudoElement,
+              ]
+                .filter(Boolean)
+                .join(" "),
+            ),
+          )
+          .map((d) => ({ ...d })),
+        null,
+        2,
+      ),
+    );
+
+    console.log(
       "🧪 WCX FRAMEWORK CLASSIFICATION TEST:",
       result.dependencies.map((d, i) => ({
         i,
