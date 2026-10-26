@@ -2257,8 +2257,24 @@
       // Find the actual target element(s).
       const matchedElements = document.querySelectorAll(structuralSelector);
 
-      // The target itself must be matched.
-      if (Array.from(matchedElements).includes(element)) {
+      const targetElementMatched =
+        Array.from(matchedElements).includes(element);
+
+      if (
+        selector === ".snip1571:hover > img" ||
+        selector === ".snip1571:hover figcaption::before"
+      ) {
+        console.log("[WCX STRUCTURAL MATCH DEBUG]", {
+          selector,
+          structuralSelector,
+          targetElementMatched,
+          matchedElementsCount: matchedElements.length,
+          elementTag: element.tagName,
+          elementMatchesHover: element.matches(":hover"),
+        });
+      }
+
+      if (targetElementMatched) {
         return true;
       }
 
@@ -6785,6 +6801,21 @@
       root,
       declaration.matchedElementDetails,
     );
+
+    if (
+      declaration.selector === ".snip1571:hover > img" ||
+      declaration.selector === ".snip1571:hover figcaption::before"
+    ) {
+      console.log("[WCX RECONSTRUCTION INPUT]", {
+        selector: declaration.selector,
+        property: declaration.property,
+        value: declaration.value,
+        stateDependencies: declaration.stateDependencies,
+        stateActive: declaration.stateActive,
+        stateActiveType: typeof declaration.stateActive,
+        declarationKeys: Object.keys(declaration),
+      });
+    }
 
     return {
       property,
